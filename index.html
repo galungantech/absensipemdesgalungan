@@ -1754,6 +1754,15 @@ document.getElementById('snap').addEventListener('click', async () => {
     return;
   }
 
+	// ===============================
+	// VALIDASI WAJAH
+	// ===============================
+	if (!wajahTerdeteksi) {
+	    showPopup("❌ Wajah tidak terdeteksi / belum pas di tengah!", "error");
+	    vibrateAlertShort();
+	    isSnapping = false;
+	    return;
+	}
 
 	//  VALIDASI GPS & RADIUS
 	if ((gpsData[0] === 0 && gpsData[1] === 0) || animatingGPS || improvingAccuracy) {
