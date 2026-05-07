@@ -303,10 +303,10 @@ document.addEventListener("DOMContentLoaded", function() {
 		    <select id="status" class="form-control" disabled>
 		
 		        <!-- default -->
-		        <option value="" disabled selected>Pilih Status Absen</option>
+		        <option value="" disabled selected hidden>Pilih Status Absen</option>
 		
 		        <!-- loading -->
-		        <option id="opt-loading" hidden>⏳ Mengambil status...</option>
+		        <option id="opt-loading" value="" disabled selected hidden>⏳ Sedang memeriksa status</option>
 		
 		        <!-- opsi -->
 		        <option value="Hadir" id="opt-hadir" hidden>Hadir</option>
@@ -445,7 +445,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
 <!-- JQuery -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+	
 <script>
 /* =========================================================================================================
     BAGIAN KODE TANGGAL
@@ -675,47 +677,52 @@ async function loginUser() {
     showPopup("Memproses login...", "loading");
 
     try {
-        // 1. Hashing password dilakukan secara lokal (cepat)
+        // Hashing password dilakukan secara lokal
         const passwordHash = await hashPassword(password);
 
-        // 2. SATU KALI FETCH SAJA (Gunakan template literals agar rapi)
-        // Gunakan parameter timestamp (&_t=) untuk menghindari cache browser
+        // Tambahkan timestamp agar browser tidak mengambil data lama (cache)
         const url = `${GAS_URL}?action=checkLogin&username=${encodeURIComponent(username)}&passwordHash=${encodeURIComponent(passwordHash)}&_t=${Date.now()}`;
 
         const webResponse = await fetch(url);
-
-        if (!webResponse.ok) throw new Error("Network response was not ok");
+        
+        // Cek apakah response dari Google valid
+        if (!webResponse.ok) throw new Error("Gagal terhubung ke Google Server");
 
         const res = await webResponse.json();
 
-        if (res && res.status !== "error") {
-            // ✅ LOGIN BERHASIL (Sisa kode Anda)
+        if (res && res.status === "success") { // Sesuaikan dengan status: "success" dari GAS
+            // ✅ SIMPAN DATA KE SESSION
             userData = res;
             sessionStorage.setItem('userData', JSON.stringify(res));
             sessionStorage.setItem('page', 'absen');
 
+            // ✅ PINDAH HALAMAN SECARA INSTAN
             $('#LoginPage').hide();
             $('#AbsensiPage').show();
 
-            $('#perangkatDisplay').val(res.nama + ' | ' + res.jabatan);
-            $('#perangkatData').val(res.nama + '|' + res.jabatan);
+            // Isi display info perangkat
+            $('#perangkatDisplay').val(`${res.nama} | ${res.jabatan}`);
+            $('#perangkatData').val(`${res.nama}|${res.jabatan}`);
 
-            fotoData = null;
+            fotoData = null; // Reset foto lama
 
-            if (res.koordinat) {
+            // Parsing koordinat dari "lat, lon"
+            if (res.koordinat && res.koordinat.includes(",")) {
                 const parts = res.koordinat.split(",");
                 targetLocation = { lat: parseFloat(parts[0]), lon: parseFloat(parts[1]) };
                 lastTargetLocation = targetLocation;
             }
 
-            showPopup("Login berhasil!", "success");
-			updateStatusOptions();
-
-            setTimeout(() => {
-                startIdleTimer();
-                startGPS();
-                startWebcam();
-            }, 500);
+            showPopup("Login berhasil! Selamat datang " + res.nama, "success", 5000);
+            
+            // JALANKAN PROSES LATAR BELAKANG TANPA DELAY LAMA
+            updateStatusOptions();
+            startIdleTimer();
+            
+            // Gunakan Promise.all agar GPS dan Kamera aktif bersamaan
+            Promise.all([startGPS(), startWebcam()]).catch(err => {
+                console.warn("Kamera atau GPS mungkin belum diizinkan:", err);
+            });
 
         } else {
             const errMsg = res.message || "Username atau Password salah!";
@@ -724,12 +731,60 @@ async function loginUser() {
         }
     } catch (error) {
         console.error("Connection Error:", error);
-        showPopup("⚠️ Gagal terhubung ke server, periksa koneksi internet.", "error", 5000);
+        showPopup("⚠️ Koneksi internet bermasalah atau server sibuk.", "error", 5000);
     }
 }
 
-/* FUNGSI STATUS */
+// ===============================
+// 🔥 FEATURE TOGGLE GLOBAL
+// ===============================
+const FEATURE = {
+    PULANG: true // true = aktifkan sistem pulang, false = mode normal
+};
+
+// ===============================
+// 🔥 CEK JADWAL PULANG
+// ===============================
+function isPulangAllowed() {
+	return true; //hapus ini atau kasih tanda // untuk mengaktifkan fungsi ini
+    if (!FEATURE.PULANG) return false;
+
+    const now = new Date();
+
+    const hari = now.getDay(); // 0=minggu, 1=senin ... 6=sabtu
+    const jam = now.getHours();
+    const menit = now.getMinutes();
+
+    const totalMenit = jam * 60 + menit;
+
+    // ✅ Sabtu & Minggu → bebas
+    if (hari === 0 || hari === 6) {
+        return true;
+    }
+
+    // ✅ Senin - Kamis → >= 14:00
+    if (hari >= 1 && hari <= 4) {
+        return totalMenit >= (14 * 60);
+    }
+
+    // ✅ Jumat → >= 13:00
+    if (hari === 5) {
+        return totalMenit >= (13 * 60);
+    }
+
+    return false;
+}
+	
+// ===============================
+// 🔥 STATUS UI CONTROL
+// ===============================
+let isLockedPulang = false;
+let loadingMode = "loading";
+let lastStatusServer = "";
+let dot = 0;
+
 async function updateStatusOptions() {
+
     const selectStatus = document.getElementById("status");
     const optLoading = document.getElementById("opt-loading");
 
@@ -739,92 +794,130 @@ async function updateStatusOptions() {
     const optDinas = document.getElementById('opt-dinas');
     const optPulang = document.getElementById('opt-pulang');
 
-    if (!selectStatus || !optLoading || !optHadir || !optPulang) return;
+    if (!selectStatus || !optLoading) return;
 
     // ===============================
-    // 🔥 TAMPILKAN LOADING
+    // RESET STATE
     // ===============================
+    isLockedPulang = false;
+    loadingMode = "loading";
+
     selectStatus.disabled = true;
 
     optLoading.hidden = false;
-    optLoading.selected = true; // 🔥 wajib biar muncul
-    optLoading.textContent = "⏳ Mengambil status...";
+    optLoading.selected = true;
+    //optLoading.textContent = "⏳ Sedang memeriksa status...";
 
+    // ===============================
+    // USER DATA
+    // ===============================
     const userObj = userData || JSON.parse(sessionStorage.getItem('userData'));
+
     if (!userObj) {
         optLoading.hidden = true;
-        optLoading.selected = false;
         selectStatus.disabled = false;
         return;
     }
 
     try {
-        const url = `${GAS_URL}?action=getStatusUI&username=${encodeURIComponent(userObj.username)}&spreadsheetId=${encodeURIComponent(userObj.spreadsheetId)}`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
 
+        const url = `${GAS_URL}?action=getStatusUI&username=${encodeURIComponent(userObj.username)}&spreadsheetId=${encodeURIComponent(userObj.spreadsheetId)}`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Network error");
+
+        const data = await res.json();
+        if (!data) throw new Error("Data kosong");
+		lastStatusServer = (data.lastStatus || "").toLowerCase();
         const sudahMasuk = data.sudahAbsenMasuk === true;
         const sudahPulang = data.sudahPulang === true;
 
         // ===============================
-        // RESET SEMUA
+        // RESET SEMUA OPSI
         // ===============================
         optHadir.hidden = true;
         optIzin.hidden  = true;
         optSakit.hidden = true;
         optDinas.hidden = true;
-        optPulang.hidden = true;
+        optPulang.hidden = true; // default selalu hidden
 
         // ===============================
-        // LOGIKA
+        // MODE 1: PULANG DISABLE (NORMAL MODE)
         // ===============================
-        if (!sudahMasuk) {
+        if (!FEATURE.PULANG) {
+
             optHadir.hidden = false;
             optIzin.hidden  = false;
             optSakit.hidden = false;
             optDinas.hidden = false;
-        } 
-        else if (sudahMasuk && !sudahPulang) {
-            optPulang.hidden = false;
+
+            // Pulang TIDAK PERNAH muncul
+            optPulang.hidden = true;
+        }
+
+        // ===============================
+        // MODE 2: PULANG ENABLED (SMART MODE)
+        // ===============================
+        else {
+
+            // belum absen
+            if (!sudahMasuk) {
+
+                optHadir.hidden = false;
+                optIzin.hidden  = false;
+                optSakit.hidden = false;
+                optDinas.hidden = false;
+
+                optPulang.hidden = true;
+            }
+
+            // sudah absen → hanya pulang
+            else if (sudahMasuk && !sudahPulang) {
+
+                if (isPulangAllowed()) {
+                    optPulang.hidden = false;
+                } else {
+                    optPulang.hidden = true;
+                    isLockedPulang = true;
+                }
+            }
+
+            // sudah pulang
+            else {
+                optPulang.hidden = true;
+            }
         }
 
     } catch (err) {
-        console.error("Error:", err);
+        console.error("STATUS ERROR:", err);
+
     } finally {
-        // ===============================
-        // 🔥 MATIKAN LOADING
-        // ===============================
-        optLoading.hidden = true;
-        optLoading.selected = false;
 
-        selectStatus.disabled = false;
+        setTimeout(() => {
 
-        // balik ke default
-        selectStatus.selectedIndex = 0;
+            optLoading.hidden = true;
+            optLoading.selected = false;
+
+            selectStatus.disabled = false;
+            selectStatus.selectedIndex = 0;
+
+        }, 300);
     }
 }
 
-	window.addEventListener("load", function () {
-    const elTampil = document.getElementById("titikKoordinatTampil");
-
-    if (elTampil) {
-        elTampil.value = "⚠️ Status Absen belum dipilih.";
-    }
-});
-
 // ===============================
-// ANIMASI LOADING STATUS
+// 🔥 ANIMASI LOADING DOT
 // ===============================
-let dot = 0;
-
 setInterval(() => {
     const optLoading = document.getElementById("opt-loading");
 
-    if (optLoading && !optLoading.hidden) {
-        dot = (dot + 1) % 4;
-        optLoading.textContent = "⏳ Mengambil status" + ".".repeat(dot);
-    }
+    if (!optLoading || optLoading.hidden) return;
+
+    if (loadingMode === "locked") return;
+
+    dot = (dot + 1) % 4;
+    optLoading.textContent = "⏳ Sedang memeriksa status" + ".".repeat(dot);
+
 }, 500);
 
 /* =========================================================================================================
@@ -865,12 +958,6 @@ async function isGPSEnabledUniversal() {
         return perm.state !== "denied";
     } catch { return true; }
 }
-
-// =====================================================
-// Disable / Enable Kamera
-// =====================================================
-const useCamera = true;
-// =====================================================	
 
 // =====================================================
 // GPS STATE
@@ -1372,12 +1459,49 @@ document.addEventListener("DOMContentLoaded", () => {
 /* =========================================================================================================
     BAGIAN KODE KAMERA & FOTO DOKUMENTASI (REVISI GITHUB PAGES)
 ========================================================================================================= */
+// =====================================================
+// Disable / Enable Kamera
+// =====================================================
+const useCamera = true;
+// =====================================================
+
 let stream = null; 
 let gpsSaatFoto = [0, 0];
 let fotoData = null;
 let isStarting = false; 
+let faceDetector = null;
+let wajahTerdeteksi = false;
+let detectActive = false;
+let lastDetectTime = 0;
+
+async function detectLoop() {
+  if (!detectActive) return;
+
+  const video = document.getElementById('video');
+  if (!video || !faceDetector) {
+    setTimeout(detectLoop, 300);
+    return;
+  }
+
+  const now = Date.now();
+
+  // 🔥 Batasi biar ringan
+  if (now - lastDetectTime > 500) {
+    if (video.readyState >= 2) {
+      try {
+        await faceDetector.send({ image: video });
+      } catch (e) {
+        console.warn("Detect error:", e);
+      }
+    }
+    lastDetectTime = now;
+  }
+
+  setTimeout(detectLoop, 150);
+}
 
 function stopWebcam() {
+detectActive = false; // 🔥 tambahkan ini
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
     stream = null;
@@ -1439,6 +1563,62 @@ async function startWebcam() {
     });
 
     video.style.display = 'block';
+	// ===============================
+	// INIT FACE DETECTION (AMAN)
+	// ===============================
+	if (!faceDetector && typeof FaceDetection !== "undefined") {
+	  try {
+	    faceDetector = new FaceDetection({
+	      locateFile: (file) =>
+	        `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+	    });
+	
+	    faceDetector.setOptions({
+	      model: 'short',
+	      minDetectionConfidence: 0.6
+	    });
+	
+	    faceDetector.onResults(results => {
+	      try {
+	        const indikator = document.getElementById("faceStatus");
+	
+	        if (results.detections && results.detections.length > 0) {
+	          const box = results.detections[0].boundingBox;
+	
+	          // 🔥 HANYA CEK TIDAK KE POTONG (tidak peduli jauh/dekat)
+	          const tidakKepotong =
+	            (box.xCenter - box.width / 2) > 0.08 &&   // kiri
+	            (box.xCenter + box.width / 2) < 0.92 &&   // kanan
+	            (box.yCenter - box.height / 2) > 0.08 &&  // atas
+	            (box.yCenter + box.height / 2) < 0.92;    // bawah
+	
+	          wajahTerdeteksi = tidakKepotong;
+	
+	          if (indikator) {
+	            indikator.innerText = tidakKepotong
+	              ? "🟢 Wajah utuh (OK)"
+	              : "🟡 Wajah terlalu pinggir";
+	          }
+	
+	        } else {
+	          wajahTerdeteksi = false;
+	          if (indikator) indikator.innerText = "🔴 Tidak ada wajah";
+	        }
+	
+	      } catch (err) {
+	        console.warn("onResults error:", err);
+	      }
+	    });
+	
+	  } catch (e) {
+	    console.warn("FaceDetection gagal:", e);
+	  }
+	}
+	
+	// 🔥 START DETEKSI
+	detectActive = true;
+	detectLoop();
+	  
     const aspect = video.videoHeight / video.videoWidth;
     if (aspect && isFinite(aspect)) {
       container.style.height = `${container.offsetWidth * aspect}px`;
@@ -1522,14 +1702,31 @@ document.getElementById('snap').addEventListener('click', async () => {
   const koordinatValue = tampil ? tampil.value : "";
   const statusRaw = statusInput ? statusInput.options[statusInput.selectedIndex].text : status;
 
-  // 1. VALIDASI DASAR
-  if (!status) {
-    showPopup("⚠️ Pilih Status Absen terlebih dahulu.", "warning");
-    vibrateAlertShort();
-    isSnapping = false;
-    statusInput.focus();
-    return;
-  }
+    // ===============================
+    // 1. VALIDASI DASAR
+    // ===============================
+	if (statusInput) {
+	    if (statusInput.disabled) {
+	        showPopup("⚠️ Pilih Status Absen terlebih dahulu.", "warning");
+	        vibrateAlertShort();
+	        isSnapping = false;
+	
+	        statusInput.disabled = false;
+	        statusInput.focus();
+	        statusInput.disabled = true;
+	
+	        return;
+	    }
+	
+	    if (!status) {
+	        showPopup("⚠️ Pilih Status Absen terlebih dahulu.", "warning");
+	        vibrateAlertShort();
+	        isSnapping = false;
+	
+	        statusInput.focus();
+	        return;
+	    }
+	}
 
   const ketWajib = ["izin", "sakit", "dinas"].includes(status.toLowerCase());
   if (ketWajib && !keterangan) {
