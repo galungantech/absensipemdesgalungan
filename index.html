@@ -1512,7 +1512,7 @@ document.getElementById('snap').addEventListener('click', async () => {
 	    
 	    // 1. Ambil gambar murni dari video
 	    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-	    const fotoMurni = canvas.toDataURL("image/jpeg", 0.85);
+	    const fotoMurni = canvas.toDataURL("image/jpeg", 0.65);
 	
 	    // =====================================================
 	    // 🔥 TAMBAHAN: SIMPAN & TAMPILKAN PREVIEW
@@ -1681,7 +1681,7 @@ document.getElementById('snap').addEventListener('click', async () => {
             ctx2.shadowBlur = 0;
     
             // FINALISASI FOTO
-            const finalFoto = canvas.toDataURL("image/jpeg", 0.90);
+            const finalFoto = canvas.toDataURL("image/jpeg", 0.65);
             fotoData = {
                 name: `${userData?.nama || "user"}_${serverTime.full.replace(/[: ]/g, "_")}.jpeg`,
                 base64: finalFoto.split(",")[1],
