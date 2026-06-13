@@ -1137,8 +1137,6 @@ function startGPSMonitoring(onReady) {
                 const lon = pos.coords.longitude;
                 const acc = pos.coords.accuracy;
 
-                stopGPSLoading();
-
                 // 🔥 FIRST FIX (INI KUNCI)
                 if (!firstFix) {
                     firstFix = true;
