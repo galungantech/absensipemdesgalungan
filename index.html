@@ -693,7 +693,9 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
-			resetGPSState();
+			gpsData = [0, 0];
+			gpsAccuracy = 0;
+			lastInsideArea = null;
 			
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
@@ -797,7 +799,7 @@ const MAX_ACCURACY = 50; // meter
 // =====================================================
 function startGPS(onReady) {
     gpsSystemActive = true
-	resetGPSState();
+
     // 🔥 langsung nyalakan GPS dulu
     startGPSMonitoring(onReady);
 
