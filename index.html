@@ -796,7 +796,7 @@ const MAX_ACCURACY = 50; // meter
 // =====================================================
 function startGPS(onReady) {
     gpsSystemActive = true
-
+	resetGPSState();
     // 🔥 langsung nyalakan GPS dulu
     startGPSMonitoring(onReady);
 
