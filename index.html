@@ -694,11 +694,6 @@ async function loginUser() {
 
             fotoData = null;
 			resetGPSState(); // Membersihkan cache, interval, dan watcher GPS lama
-			// 2. PAKSA MODIFIKASI UI KE STATE LOADING SEBELUM START GPS
-		    // Ini menghilangkan teks koordinat cache lama dari layar secara instan
-		    document.getElementById("gps").innerText = "Sedang memperbarui lokasi...";
-		    const tampil = document.getElementById("titikKoordinatTampil");
-		    if (tampil) tampil.value = "Sedang mengambil data...";
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
@@ -1124,52 +1119,61 @@ function startGPSMonitoring(onReady) {
 		}
 	}
 
-    function startWatch() {
-        if (!gpsSystemActive) return;
-        if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
+function startWatch() {
+    if (!gpsSystemActive) return;
+    if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
 
-        gpsWatcherId = navigator.geolocation.watchPosition(
-            pos => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                const acc = pos.coords.accuracy;
+    // Buka penanda kalau ini adalah tarikan data pertama (bisa jadi cache)
+    let isFirstOutput = true; 
 
-                stopGPSLoading();
+    gpsWatcherId = navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
 
-                // 🔥 FIRST FIX (INI KUNCI)
-                if (!firstFix) {
-                    firstFix = true;
+        // 🌟 PERBAIKAN: Jika ini output pertama dari watchPosition, abaikan saja 
+        // karena hampir pasti ini adalah data CACHE lama dari hardware browser.
+        if (isFirstOutput) {
+            isFirstOutput = false;
+            console.log("Mengabaikan data GPS pertama (kemungkinan cache)...");
+            return; // Berhenti di sini, biarkan animasi loading tetap berjalan
+        }
 
-                    if (typeof onReady === "function") {
-                        onReady(); // tombol aktif lagi di sini
-                    }
-                }
+        // Data kedua dan seterusnya barulah data GPS terupdate yang asli
+        stopGPSLoading(); 
 
-                if (acc > MAX_ACCURACY) {
-                    gpsData = [lat, lon];
-                    startAccAnim(lat, lon, acc);
-                } else {
-                    stopAccAnim();
-                    gpsData = [lat, lon];
-                    forceUpdateDistanceUI(lat, lon, acc);
-                }
+        if (!firstFix) {
+            firstFix = true;
+            if (typeof onReady === "function") {
+                onReady(); 
+            }
+        }
 
-                if (gpsErrorActive) {
-                    forceClosePopup();
-                    gpsErrorActive = false;
-                }
-            },
-            err => {
-                stopAccAnim();
-                gpsData = [0, 0];
-                stopGPSLoading();
-                updateGPSDisplay("⚠️ Sinyal GPS hilang.");
+        if (acc > MAX_ACCURACY) {
+            gpsData = [lat, lon];
+            startAccAnim(lat, lon, acc);
+        } else {
+            stopAccAnim();
+            gpsData = [lat, lon];
+            forceUpdateDistanceUI(lat, lon, acc);
+        }
 
-                if (typeof onReady === "function") onReady(); // 🔥 fallback
-            },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
-        );
-    }
+        if (gpsErrorActive) {
+            forceClosePopup();
+            gpsErrorActive = false;
+        }
+    }, err => {
+        stopAccAnim();
+        gpsData = [0, 0];
+        stopGPSLoading();
+        updateGPSDisplay("⚠️ Sinyal GPS hilang.");
+        if (typeof onReady === "function") onReady(); 
+    }, { 
+        enableHighAccuracy: true, 
+        maximumAge: 0, // Meminta browser mencari posisi baru
+        timeout: 20000 
+    });
+}
 
     function startAccAnim(lat, lon, acc) {
         stopAccAnim();
