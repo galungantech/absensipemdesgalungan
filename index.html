@@ -693,9 +693,6 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
-			gpsData = [0, 0];
-			gpsAccuracy = 0;
-			lastInsideArea = null;
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
