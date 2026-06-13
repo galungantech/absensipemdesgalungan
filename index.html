@@ -693,6 +693,7 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
+			resetGPSState(); // Membersihkan cache, interval, dan watcher GPS lama
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
