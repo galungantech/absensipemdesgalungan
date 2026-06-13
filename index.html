@@ -1069,17 +1069,16 @@ function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
 
-    let firstFix = false; // 🔥 PENANDA GPS SIAP
+    let firstFix = false; 
     
     // =========================================================
-    // PARALISASI TOTAL DATA LAMA SAAT AWAL START
+    // INITIALIZATION STATE
     // =========================================================
-    gpsData = [0, 0]; 
+    gpsData = [0, 0];
     if (typeof gpsAccuracy !== 'undefined') gpsAccuracy = 0;
     lastInsideArea = null;
     areaErrorActive = false;
     
-    // Paksa UI langsung bersih ke state memuat secara sinkron (tanpa nunggu antrean browser)
     updateGPSDisplay("Sedang memperbarui lokasi");
     const elNama = document.getElementById("titikKoordinatTampil");
     if (elNama) elNama.value = "Sedang mengambil data...";
@@ -1089,19 +1088,21 @@ function startGPSMonitoring(onReady) {
     if (!navigator.geolocation) {
         stopGPSLoading();
         updateGPSDisplay("⚠️ GPS tidak tersedia");
-        if (typeof onReady === "function") onReady(); // 🔥 fallback
+        if (typeof onReady === "function") onReady(); 
         return;
     }
 
     async function handleGPS() {
         const gpsEnabled = await isGPSEnabledUniversal();
 
-        // Jika status benar-benar berubah, baru kita proses berat
+        // 🌟 PERBAIKAN UTAMA: Cek apakah ini inisialisasi pertama setelah reset (lastGPSEnabled === null)
+        const isFirstRunAfterReset = (lastGPSEnabled === null);
+
         if (gpsEnabled !== lastGPSEnabled || (gpsEnabled && gpsWatcherId === null)) {
-            lastGPSEnabled = gpsEnabled;
+            // Simpan status terbaru SEBELUM melakukan percabangan logis
+            lastGPSEnabled = gpsEnabled; 
 
             if (!gpsEnabled) {
-                // Logika mematikan sistem
                 if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
                 gpsData = [0, 0];
                 gpsWatcherId = null;
@@ -1113,7 +1114,6 @@ function startGPSMonitoring(onReady) {
                     showPopup("⚠️ Periksa GPS Anda.", "error", false);
                 }
             } else {
-                // Logika menyalakan kembali
                 gpsData = [0, 0];
                 wasGPSEnabled = true;
                 gpsErrorActive = false;
@@ -1121,8 +1121,9 @@ function startGPSMonitoring(onReady) {
                 startGPSLoading();
                 startWatch();
             }
-            if (typeof onReady === "function") onReady(); // 🔥 biar tombol tidak nyangkut
-            return;
+            
+            if (typeof onReady === "function") onReady(); 
+            return; 
         }
     }
 
@@ -1130,7 +1131,6 @@ function startGPSMonitoring(onReady) {
         if (!gpsSystemActive) return;
         if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
 
-        // Buka penanda kalau ini adalah tarikan data pertama (bisa jadi cache)
         let isFirstOutput = true;
 
         gpsWatcherId = navigator.geolocation.watchPosition(pos => {
@@ -1138,15 +1138,14 @@ function startGPSMonitoring(onReady) {
             const lon = pos.coords.longitude;
             const acc = pos.coords.accuracy;
 
-            // 🌟 VALIDASI MUTLAK: Buang data kilat pertama dari watchPosition 
-            // karena 99% itu data CACHE / POSISI TERAKHIR dari hardware HP
+            // Abaikan data pertama yang biasanya berupa cache usang perangkat
             if (isFirstOutput) {
                 isFirstOutput = false;
                 console.log("Mengabaikan data GPS pertama (kemungkinan cache)...");
-                return; // Jangan matikan loading, biarkan watchPosition mencari koordinat kedua
+                return; 
             }
 
-            // Data kedua dan seterusnya barulah data GPS terupdate yang asli
+            // Sinyal valid kedua dan seterusnya diterima, matikan animasi memuat
             stopGPSLoading();
 
             if (!firstFix) {
@@ -1177,24 +1176,23 @@ function startGPSMonitoring(onReady) {
             if (typeof onReady === "function") onReady();
         }, {
             enableHighAccuracy: true,
-            maximumAge: 0, // Meminta browser mencari posisi baru
+            maximumAge: 0, 
             timeout: 20000
         });
     }
 
-    // Eksekusi awal handleGPS dengan aman
+    // Jalankan pengecekan awal
     setTimeout(() => handleGPS(), 400);
 
     if (!gpsMonitorInterval) {
         gpsMonitorInterval = setInterval(() => {
             if (!gpsSystemActive) return;
-            // cek setiap 5 detik
             handleGPS();
             refreshTargetLocation(null, true);
-        }, 5000); // Ubah ke 5 detik (5000) agar selaras dengan interval monitoring ideal
+        }, 5000); 
     }
 }
-
+	
 // ====== EVENT LISTENER STATUS ======
 let isLoading = false; // Gembok global
 let loadDots = 0;  // Khusus untuk Loading Dots
