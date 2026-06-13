@@ -694,6 +694,11 @@ async function loginUser() {
 
             fotoData = null;
 			resetGPSState(); // Membersihkan cache, interval, dan watcher GPS lama
+			// 2. PAKSA MODIFIKASI UI KE STATE LOADING SEBELUM START GPS
+		    // Ini menghilangkan teks koordinat cache lama dari layar secara instan
+		    document.getElementById("gps").innerText = "Sedang memperbarui lokasi...";
+		    const tampil = document.getElementById("titikKoordinatTampil");
+		    if (tampil) tampil.value = "Sedang mengambil data...";
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
