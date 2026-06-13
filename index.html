@@ -1146,8 +1146,6 @@ function startGPSMonitoring(onReady) {
                     }
                 }
 				
-                stopGPSLoading();
-				
                 if (acc > MAX_ACCURACY) {
                     gpsData = [lat, lon];
                     startAccAnim(lat, lon, acc);
@@ -1156,7 +1154,7 @@ function startGPSMonitoring(onReady) {
                     gpsData = [lat, lon];
                     forceUpdateDistanceUI(lat, lon, acc);
                 }
-
+                stopGPSLoading();
                 if (gpsErrorActive) {
                     forceClosePopup();
                     gpsErrorActive = false;
