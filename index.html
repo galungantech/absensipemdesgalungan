@@ -694,7 +694,7 @@ async function loginUser() {
 
             fotoData = null;
 			gpsData = [0, 0];
-			gpsAccuracy = 0;
+			gpsAccuracy = null;
 			lastInsideArea = null;
 			
             if (res.koordinat) {
@@ -833,7 +833,7 @@ function resetGPSState() {
     areaErrorActive = false;
     lastInsideArea = null;
     gpsData = [0, 0];
-	gpsAccuracy = 0;
+	gpsAccuracy = null;
     gpsErrorActive = false;
     animatingGPS = false;
     improvingAccuracy = false;
@@ -1073,10 +1073,9 @@ function startGPSMonitoring(onReady) {
     if (!gpsDiv) return;
 
     let firstFix = false; // 🔥 PENANDA GPS SIAP
-	let gpsFixCount = 0;
 
 	gpsData = [0, 0];
-	gpsAccuracy = 0;
+	gpsAccuracy = null;
 	lastInsideArea = null;
     areaErrorActive = false;
     updateGPSDisplay("Sedang memperbarui lokasi");
@@ -1101,7 +1100,7 @@ function startGPSMonitoring(onReady) {
             // Logika mematikan sistem
             if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
 			gpsData = [0, 0];
-			gpsAccuracy = 0;
+			gpsAccuracy = null;
 			lastInsideArea = null;
             gpsWatcherId = null;
             wasGPSEnabled = false;
@@ -1115,7 +1114,7 @@ function startGPSMonitoring(onReady) {
         } else {
             // Logika menyalakan kembali
 			gpsData = [0, 0];
-			gpsAccuracy = 0;
+			gpsAccuracy = null;
 			lastInsideArea = null;
             wasGPSEnabled = true;
             gpsErrorActive = false;
@@ -1137,12 +1136,7 @@ function startGPSMonitoring(onReady) {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 const acc = pos.coords.accuracy;
-gpsFixCount++;
 
-if (gpsFixCount === 1) {
-    updateGPSDisplay("Sedang mendapatkan lokasi GPS terbaru...");
-    return;
-}
                 stopGPSLoading();
 
                 // 🔥 FIRST FIX (INI KUNCI)
@@ -1171,7 +1165,7 @@ if (gpsFixCount === 1) {
             err => {
                 stopAccAnim();
 				gpsData = [0, 0];
-				gpsAccuracy = 0;
+				gpsAccuracy = null;
 				lastInsideArea = null;
                 stopGPSLoading();
                 updateGPSDisplay("⚠️ Sinyal GPS hilang.");
