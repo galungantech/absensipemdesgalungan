@@ -1145,7 +1145,9 @@ function startGPSMonitoring(onReady) {
                         onReady(); // tombol aktif lagi di sini
                     }
                 }
-
+				
+                stopGPSLoading();
+				
                 if (acc > MAX_ACCURACY) {
                     gpsData = [lat, lon];
                     startAccAnim(lat, lon, acc);
