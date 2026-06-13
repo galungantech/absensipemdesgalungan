@@ -1073,6 +1073,7 @@ function startGPSMonitoring(onReady) {
     if (!gpsDiv) return;
 
     let firstFix = false; // 🔥 PENANDA GPS SIAP
+	let gpsFixCount = 0;
 
 	gpsData = [0, 0];
 	gpsAccuracy = 0;
@@ -1136,7 +1137,12 @@ function startGPSMonitoring(onReady) {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 const acc = pos.coords.accuracy;
+gpsFixCount++;
 
+if (gpsFixCount === 1) {
+    updateGPSDisplay("Sedang mendapatkan lokasi GPS terbaru...");
+    return;
+}
                 stopGPSLoading();
 
                 // 🔥 FIRST FIX (INI KUNCI)
