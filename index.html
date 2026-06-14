@@ -787,6 +787,7 @@ let gpsLoadingInterval = null;
 let gpsImproveInterval = null;
 let accuracyCycleTimer = null;
 let gpsData = [0, 0];
+let gpsData = null;
 let gpsErrorActive = false;
 let animatingGPS = false;
 let improvingAccuracy = false;
@@ -848,6 +849,7 @@ function resetGPSState() {
     areaErrorActive = false;
     lastInsideArea = null;
     gpsData = [0, 0];
+	gpsData = null;
     gpsErrorActive = false;
     animatingGPS = false;
     improvingAccuracy = false;
