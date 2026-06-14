@@ -693,7 +693,7 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
-			gpsData = [0, 0];
+			      gpsData = [0, 0];
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
@@ -1104,16 +1104,16 @@ function startGPSMonitoring(onReady) {
 
 	async function handleGPS() {
     	const gpsEnabled = await isGPSEnabledUniversal();
-		const gpsValid = await isGPSValidUniversal();
+		  //const gpsValid = await isGPSValidUniversal();
 
     	// Jika status benar-benar berubah, baru kita proses berat
-    	if (gpsEnabled && gpsValid && (lastGPSEnabled !== gpsEnabled || gpsWatcherId === null)) {
-        lastGPSEnabled = gpsEnabled;
+    	if (gpsEnabled !== lastGPSEnabled || (gpsEnabled && gpsWatcherId === null)) {
+          lastGPSEnabled = gpsEnabled;
 
         if (!gpsEnabled) {
             // Logika mematikan sistem
             if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-			gpsData = [0, 0];
+			      gpsData = [0, 0];
             gpsWatcherId = null;
             wasGPSEnabled = false;
             stopGPSLoading();
@@ -1125,7 +1125,7 @@ function startGPSMonitoring(onReady) {
             }
         } else {
             // Logika menyalakan kembali
-			gpsData = [0, 0];
+			      gpsData = [0, 0];
             wasGPSEnabled = true;
             gpsErrorActive = false;
             forceClosePopup();
@@ -1140,6 +1140,7 @@ function startGPSMonitoring(onReady) {
 	function startWatch() {
 	    if (!gpsSystemActive) return;
 	    if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
+          gpsWatcherId = null;
 	
 	    // Ambil posisi terbaru secara langsung sebelum memulai watch
 	    navigator.geolocation.getCurrentPosition(
@@ -1154,7 +1155,7 @@ function startGPSMonitoring(onReady) {
 	        },
 	        err => {
 	            // Handle error jika gagal mendapatkan posisi
-	            updateGPSDisplay("⚠️ Gagal mendapatkan lokasi terbaru");
+	            updateGPSDisplay("⚠️ Gagal mendapatkan lokasi...");
 	        },
 	        WATCH_OPTIONS
 	    );
@@ -1194,8 +1195,10 @@ function startGPSMonitoring(onReady) {
 	            stopAccAnim();
 	            gpsData = [0, 0];
 	            stopGPSLoading();
-	            updateGPSDisplay("⚠️ Sinyal GPS hilang. silakan pinsah posisi");
-				startGPS();
+	            updateGPSDisplay("⚠️ Sinyal GPS hilang, silakan pindah posisi.");
+              setTimeout(() => {
+                  startWatch()
+              }, 500);
 	
 	            if (typeof onReady === "function") onReady(); // 🔥 fallback
 	        },
