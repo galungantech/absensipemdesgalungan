@@ -1130,7 +1130,7 @@ function startWatch() {
     let loadingTimeout = setTimeout(() => {
         stopGPSLoading();
         updateGPSDisplay("⚠️ GPS terlalu lama merespon...");
-    }, 10000); // 10 detik
+    }, 50000); // 10 detik
 
     gpsWatcherId = navigator.geolocation.watchPosition(
         pos => {
@@ -1139,9 +1139,9 @@ function startWatch() {
             const acc = pos.coords.accuracy;
 
             // 🔥 cancel timeout kalau sudah dapat GPS
-            clearTimeout(loadingTimeout);
+            //clearTimeout(loadingTimeout);
 
-            stopGPSLoading();
+            //stopGPSLoading();
 
             // FIRST FIX
             if (!firstFix) {
@@ -1203,10 +1203,10 @@ function startWatch() {
     setTimeout(() => handleGPS(), 400);
     if (!gpsMonitorInterval) {
         gpsMonitorInterval = setInterval(() => {
-            if (!gpsSystemActive) return; // cek setiap 5 detik
+            if (!gpsSystemActive) return;
             handleGPS();
             refreshTargetLocation(null, true);
-        }, 3000);
+        }, 1000);
     }
 }
 
