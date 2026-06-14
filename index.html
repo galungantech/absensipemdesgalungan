@@ -1105,37 +1105,46 @@ function startGPSMonitoring(onReady) {
     }
 
 	async function handleGPS() {
-	    const gpsEnabled = await isGPSEnabledUniversal();
-	    const gpsValid = await isGPSValidUniversal(); // 🔥 Pengecekan Mock GPS modern tanpa cache
-	
-	    // 1. JIKA GPS MATI ATAU TERDETEKSI FAKE GPS
-	    if (!gpsEnabled || !gpsValid) {
-	        if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-	        gpsData = [0, 0];
-	        gpsWatcherId = null;
-	        wasGPSEnabled = false;
-	        stopGPSLoading();
-			updateGPSDisplay("⚠️ GPS tidak aktif.");
-	        
-	        if (!gpsErrorActive) {
-	            gpsErrorActive = true;
-				showPopup("⚠️ Periksa GPS Anda.", "error", false);
-	        }
-	        
-	        if (typeof onReady === "function") onReady();
-	        return;
-	    }
-	
+    	const gpsEnabled = await isGPSEnabledUniversal();
 
-	function startWatch() {
-	    if (!gpsSystemActive) return;
-	    if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-          gpsWatcherId = null;
-	
-gpsWatcherId = navigator.geolocation.watchPosition(
-    pos => {
-        lastGPSUpdate = Date.now(); // 👈 penting
+    	// Jika status benar-benar berubah, baru kita proses berat
+    	if (gpsEnabled !== lastGPSEnabled || (gpsEnabled && gpsWatcherId === null)) {
+        lastGPSEnabled = gpsEnabled;
 
+        if (!gpsEnabled) {
+            // Logika mematikan sistem
+            if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
+			gpsData = [0, 0];
+            gpsWatcherId = null;
+            wasGPSEnabled = false;
+            stopGPSLoading();
+            updateGPSDisplay("⚠️ GPS tidak aktif.");
+            
+            if (!gpsErrorActive) {
+                gpsErrorActive = true;
+                showPopup("⚠️ Periksa GPS Anda.", "error", false);
+            }
+        } else {
+            // Logika menyalakan kembali
+			gpsData = [0, 0];
+            wasGPSEnabled = true;
+            gpsErrorActive = false;
+            forceClosePopup();
+            startGPSLoading();
+            startWatch();
+        }
+		    if (typeof onReady === "function") onReady(); // 🔥 biar tombol tidak nyangkut
+            return;
+		}
+	}
+
+    function startWatch() {
+        if (!gpsSystemActive) return;
+        if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
+
+        gpsWatcherId = navigator.geolocation.watchPosition(
+            pos => {
+				lastGPSUpdate = Date.now();
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 const acc = pos.coords.accuracy;
