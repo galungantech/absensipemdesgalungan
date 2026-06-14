@@ -9,7 +9,7 @@
 (function() {
     // 1. DATA DASAR
     const ua = navigator.userAgent || "";
-    const REQUIRED_VERSION = "ABSENSI_PEMDES_ANDROID_v2.0.0";
+    const REQUIRED_VERSION = "ABSENSI_PEMDES_ANDROID_v2.1.0";
     const match = ua.match(/APP_TOKEN=([^;]+)/);
     const token = match ? match[1] : null;
 
@@ -693,6 +693,7 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
+			gpsData = [0, 0];
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
@@ -1193,7 +1194,8 @@ function startGPSMonitoring(onReady) {
 	            stopAccAnim();
 	            gpsData = [0, 0];
 	            stopGPSLoading();
-	            updateGPSDisplay("⚠️ Sinyal GPS hilang.");
+	            updateGPSDisplay("⚠️ Sinyal GPS hilang. silakan pinsah posisi");
+				startGPS();
 	
 	            if (typeof onReady === "function") onReady(); // 🔥 fallback
 	        },
