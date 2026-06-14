@@ -759,18 +759,18 @@ async function isGPSEnabledUniversal() {
     } catch { return true; }
 }
 
-//async function isGPSValidUniversal() {
-//   if (isWebView()) {
-       //try { 
+async function isGPSValidUniversal() {
+   if (isWebView()) {
+       try { 
            // Memanggil pengecekan sistem anti-mock modern di Kotlin
-         //  return GPSBridge.isGPSValid(); 
-       //} catch { 
+           return GPSBridge.isGPSValid(); 
+       } catch { 
          //  return true; 
-       //}
-   //}
+       }
+   }
    // Di browser biasa, deteksi mock otomatis diserahkan ke filter timestamp Anda
-   //return true; 
-//}
+   return true; 
+}
 	
 // =====================================================
 // Disable / Enable Kamera
@@ -1103,38 +1103,41 @@ function startGPSMonitoring(onReady) {
     }
 
 	async function handleGPS() {
-    	const gpsEnabled = await isGPSEnabledUniversal();
-		  //const gpsValid = await isGPSValidUniversal();
-
-    	// Jika status benar-benar berubah, baru kita proses berat
-    	if (gpsEnabled !== lastGPSEnabled || (gpsEnabled && gpsWatcherId === null)) {
-          lastGPSEnabled = gpsEnabled;
-
-        if (!gpsEnabled) {
-            // Logika mematikan sistem
-            if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-			gpsData = [0, 0];
-            gpsWatcherId = null;
-            wasGPSEnabled = false;
-            stopGPSLoading();
-            updateGPSDisplay("⚠️ GPS tidak aktif.");
-            
-            if (!gpsErrorActive) {
-                gpsErrorActive = true;
-                showPopup("⚠️ Periksa GPS Anda.", "error", false);
-            }
-        } else {
-            // Logika menyalakan kembali
-			gpsData = [0, 0];
-            wasGPSEnabled = true;
-            gpsErrorActive = false;
-            forceClosePopup();
-            startGPSLoading();
-            startWatch();
-        }
-		    if (typeof onReady === "function") onReady(); // 🔥 biar tombol tidak nyangkut
-            return;
-		}
+	    const gpsEnabled = await isGPSEnabledUniversal();
+	    const gpsValid = await isGPSValidUniversal(); // 🔥 Pengecekan Mock GPS modern tanpa cache
+	
+	    // 1. JIKA GPS MATI ATAU TERDETEKSI FAKE GPS
+	    if (!gpsEnabled || !gpsValid) {
+	        if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
+	        gpsData = [0, 0];
+	        gpsWatcherId = null;
+	        wasGPSEnabled = false;
+	        stopGPSLoading();
+	
+	        // Tentukan pesan error yang sesuai
+	        const errorMessage = !gpsEnabled ? "⚠️ GPS tidak aktif.";
+	        updateGPSDisplay(errorMessage);
+	        
+	        if (!gpsErrorActive) {
+	            gpsErrorActive = true;
+	            const popupMessage = !gpsEnabled ? "⚠️ Periksa GPS Anda.";
+	            showPopup(popupMessage, "error", false);
+	        }
+	        
+	        if (typeof onReady === "function") onReady();
+	        return;
+	    }
+	
+	    // 2. JIKA SEMUA AMAN (GPS AKTIF & VALID), JALANKAN WATCHER SEPERTI BIASA
+	    if (gpsEnabled && gpsValid && (lastGPSEnabled !== gpsEnabled || gpsWatcherId === null)) {
+	        lastGPSEnabled = gpsEnabled;
+	        gpsData = [0, 0];
+	        wasGPSEnabled = true;
+	        gpsErrorActive = false;
+	        forceClosePopup();
+	        startGPSLoading();
+	        startWatch(); // 🔥 Di sini watchPosition (JavaScript) mengambil alih koordinat segar
+	    }
 	}
 
 	function startWatch() {
