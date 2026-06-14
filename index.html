@@ -759,18 +759,18 @@ async function isGPSEnabledUniversal() {
     } catch { return true; }
 }
 
-async function isGPSValidUniversal() {
-   if (isWebView()) {
-       try { 
+//async function isGPSValidUniversal() {
+//   if (isWebView()) {
+       //try { 
            // Memanggil pengecekan sistem anti-mock modern di Kotlin
-           return GPSBridge.isGPSValid(); 
-       } catch { 
-           return true; 
-       }
-   }
+         //  return GPSBridge.isGPSValid(); 
+       //} catch { 
+         //  return true; 
+       //}
+   //}
    // Di browser biasa, deteksi mock otomatis diserahkan ke filter timestamp Anda
-   return true; 
-}
+   //return true; 
+//}
 	
 // =====================================================
 // Disable / Enable Kamera
@@ -1113,7 +1113,7 @@ function startGPSMonitoring(onReady) {
         if (!gpsEnabled) {
             // Logika mematikan sistem
             if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-			      gpsData = [0, 0];
+			gpsData = [0, 0];
             gpsWatcherId = null;
             wasGPSEnabled = false;
             stopGPSLoading();
@@ -1125,7 +1125,7 @@ function startGPSMonitoring(onReady) {
             }
         } else {
             // Logika menyalakan kembali
-			      gpsData = [0, 0];
+			gpsData = [0, 0];
             wasGPSEnabled = true;
             gpsErrorActive = false;
             forceClosePopup();
