@@ -1135,55 +1135,34 @@ function startGPSMonitoring(onReady) {
         if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
 		gpsWatcherId = null;
 		
-	    function startAccAnim(lat, lon, acc) {
-	        stopAccAnim();
-	        animatingGPS = true;
-	        accAnim = setInterval(() => {
-	            accDots = (accDots + 1) % 4;
-	            // Jika belum mendapat koordinat pertama yang lolos seleksi, 
-	            // buat teks tetap menahan informasi loading agar pengguna tahu sistem sedang memproses tingkat akurasi.
-	            if (!firstFix) {
-	                updateGPSDisplay(`Sedang meningkatkan akurasi GPS${".".repeat(accDots)}\n(Akurasi saat ini: ${acc.toFixed(0)}m)`);
-	            } else {
-	                forceUpdateDistanceUI(lat, lon, acc);
-	            }
-	        }, 500);
-	    }
-	
-	    function stopAccAnim() {
-	        if (accAnim) clearInterval(accAnim);
-	        accAnim = null;
-	        accDots = 0;
-	        animatingGPS = false;
-	    }
-
         gpsWatcherId = navigator.geolocation.watchPosition(
-pos => {
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-    const acc = pos.coords.accuracy;
+		pos => {
+		    const lat = pos.coords.latitude;
+		    const lon = pos.coords.longitude;
+		    const acc = pos.coords.accuracy;
+		
+		    gpsData = [lat, lon];
+		
+		    if (!firstFix) {
+		        firstFix = true;
+		        stopGPSLoading();
+		        if (typeof onReady === "function") onReady();
+		    }
+		
+            if (acc > MAX_ACCURACY) {
+                gpsData = [lat, lon];
+                startAccAnim(lat, lon, acc);
+            } else {
+                stopAccAnim();
+                gpsData = [lat, lon];
+                forceUpdateDistanceUI(lat, lon, acc);
+            }
 
-    gpsData = [lat, lon];
-
-    if (!firstFix) {
-        firstFix = true;
-        stopGPSLoading();
-        if (typeof onReady === "function") onReady();
-    }
-
-    if (acc > MAX_ACCURACY) {
-        startAccAnim(lat, lon, acc);
-    } else {
-        stopAccAnim();
-    }
-
-    forceUpdateDistanceUI(lat, lon, acc);
-
-                if (gpsErrorActive) {
-                    forceClosePopup();
-                    gpsErrorActive = false;
-                }
-            },
+            if (gpsErrorActive) {
+                forceClosePopup();
+                gpsErrorActive = false;
+            }
+		},
             err => {
                 stopAccAnim();
                 gpsData = [0, 0];
@@ -1195,7 +1174,29 @@ pos => {
 			WATCH_OPTIONS
         );
     }
-
+	
+	function startAccAnim(lat, lon, acc) {
+	    stopAccAnim();
+	    animatingGPS = true;
+	    accAnim = setInterval(() => {
+	        accDots = (accDots + 1) % 4;
+	        // Jika belum mendapat koordinat pertama yang lolos seleksi, 
+	        // buat teks tetap menahan informasi loading agar pengguna tahu sistem sedang memproses tingkat akurasi.
+	        if (!firstFix) {
+	            updateGPSDisplay(`Sedang meningkatkan akurasi GPS${".".repeat(accDots)}\n(Akurasi saat ini: ${acc.toFixed(0)}m)`);
+	        } else {
+	            forceUpdateDistanceUI(lat, lon, acc);
+	        }
+	    }, 500);
+	}
+	
+	function stopAccAnim() {
+	    if (accAnim) clearInterval(accAnim);
+	    accAnim = null;
+	    accDots = 0;
+	    animatingGPS = false;
+	}
+	
     setTimeout(() => handleGPS(), 400);
     if (!gpsMonitorInterval) {
         gpsMonitorInterval = setInterval(() => {
