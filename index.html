@@ -1082,6 +1082,8 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
 // =====================================================
 // MONITORING & WATCHER
 // =====================================================
+let lastGPSUpdate = 0; // waktu terakhir GPS diperbarui
+
 function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
@@ -1102,120 +1104,129 @@ function startGPSMonitoring(onReady) {
         return;
     }
 
-	async function handleGPS() {
-	    const gpsEnabled = await isGPSEnabledUniversal();
-	    const gpsValid = await isGPSValidUniversal(); // 🔥 Pengecekan Mock GPS modern tanpa cache
-	
-	    // 1. JIKA GPS MATI ATAU TERDETEKSI FAKE GPS
-	    if (!gpsEnabled || !gpsValid) {
-	        if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-	        gpsData = [0, 0];
-	        gpsWatcherId = null;
-	        wasGPSEnabled = false;
-	        stopGPSLoading();
-			updateGPSDisplay("⚠️ GPS tidak aktif.");
-	        
-	        if (!gpsErrorActive) {
-	            gpsErrorActive = true;
-				showPopup("⚠️ Periksa GPS Anda.", "error", false);
-	        }
-	        
-	        if (typeof onReady === "function") onReady();
-	        return;
-	    }
-	
-	    // 2. JIKA SEMUA AMAN (GPS AKTIF & VALID), JALANKAN WATCHER SEPERTI BIASA
-	    if (gpsEnabled && gpsValid && (lastGPSEnabled !== gpsEnabled || gpsWatcherId === null)) {
-	        lastGPSEnabled = gpsEnabled;
-	        gpsData = [0, 0];
-	        wasGPSEnabled = true;
-	        gpsErrorActive = false;
-	        forceClosePopup();
-	        startGPSLoading();
-	        startWatch(); // 🔥 Di sini watchPosition (JavaScript) mengambil alih koordinat segar
-	    }
-	}
+    async function handleGPS() {
+        const gpsEnabled = await isGPSEnabledUniversal();
+        const gpsValid = await isGPSValidUniversal(); // 🔥 Pengecekan Mock GPS modern tanpa cache
 
-	function startWatch() {
-	    if (!gpsSystemActive) return;
-	    if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-			gpsWatcherId = null;
-	
-	    // Ambil posisi terbaru secara langsung sebelum memulai watch
-	    navigator.geolocation.getCurrentPosition(
-	        pos => {
-	            const lat = pos.coords.latitude;
-	            const lon = pos.coords.longitude;
-	            const acc = pos.coords.accuracy;
-	
-	            // Update posisi awal secara langsung
-	            gpsData = [lat, lon];
-	            forceUpdateDistanceUI(lat, lon, acc);
-	        },
-	        err => {
-	            // Handle error jika gagal mendapatkan posisi
-	            updateGPSDisplay("⚠️ Gagal mendapatkan lokasi...");
-	        },
-	        WATCH_OPTIONS
-	    );
-	
-	    // Lanjutkan dengan watchPosition
-	    gpsWatcherId = navigator.geolocation.watchPosition(
-	        pos => {
-	            const lat = pos.coords.latitude;
-	            const lon = pos.coords.longitude;
-	            const acc = pos.coords.accuracy;
-	
-	            stopGPSLoading();
-	
-	            // 🔥 FIRST FIX (INI KUNCI)
-	            if (!firstFix) {
-	                firstFix = true;
-	                if (typeof onReady === "function") {
-	                    onReady(); // tombol aktif lagi di sini
-	                }
-	            }
-	
-	            if (acc > MAX_ACCURACY) {
-	                gpsData = [lat, lon];
-	                startAccAnim(lat, lon, acc);
-	            } else {
-	                stopAccAnim();
-	                gpsData = [lat, lon];
-	                forceUpdateDistanceUI(lat, lon, acc);
-	            }
-	
-	            if (gpsErrorActive) {
-	                forceClosePopup();
-	                gpsErrorActive = false;
-	            }
-	        },
-	        err => {
-	            stopAccAnim();
-	            gpsData = [0, 0];
-	            stopGPSLoading();
-	            updateGPSDisplay("⚠️ Sinyal GPS hilang, silakan pindah posisi dan tekan restart gps.");
-	
-	            if (typeof onReady === "function") onReady(); // 🔥 fallback
-	        },
-	        WATCH_OPTIONS
-	    );
-	}
+        // 1. JIKA GPS MATI ATAU TERDETEKSI FAKE GPS
+        if (!gpsEnabled || !gpsValid) {
+            if (gpsWatcherId !== null) {
+                navigator.geolocation.clearWatch(gpsWatcherId);
+                gpsWatcherId = null;
+            }
+            gpsData = [0, 0];
+            lastGPSUpdate = 0; // reset waktu update
+            stopGPSLoading();
+            updateGPSDisplay("⚠️ GPS tidak aktif.");
 
-    function startAccAnim(lat, lon, acc) {
-        stopAccAnim();
-        animatingGPS = true;
-        accAnim = setInterval(() => {
-            accDots = (accDots + 1) % 4;
-            forceUpdateDistanceUI(lat, lon, acc);
-        }, 500);
+            if (!gpsErrorActive) {
+                gpsErrorActive = true;
+                showPopup("⚠️ Periksa GPS Anda.", "error", false);
+            }
+
+            if (typeof onReady === "function") onReady();
+            return;
+        }
+
+        // 2. JIKA SEMUA AMAN (GPS AKTIF & VALID), JALANKAN WATCHER SEPERTI BIASA
+        if (gpsEnabled && gpsValid && (lastGPSEnabled !== gpsEnabled || gpsWatcherId === null)) {
+            lastGPSEnabled = gpsEnabled;
+            gpsData = [0, 0];
+            wasGPSEnabled = true;
+            gpsErrorActive = false;
+            forceClosePopup();
+            startGPSLoading();
+            startWatch(); // 🔥 Di sini watchPosition (JavaScript) mengambil alih koordinat segar
+        }
     }
 
-    function stopAccAnim() {
-        if (accAnim) clearInterval(accAnim);
-        accAnim = null;
-        accDots = 0;
-        animatingGPS = false;
+    function startWatch() {
+        if (!gpsSystemActive) return;
+        if (gpsWatcherId !== null) {
+            navigator.geolocation.clearWatch(gpsWatcherId);
+            gpsWatcherId = null;
+        }
+
+        // Ambil posisi terbaru secara langsung sebelum memulai watch
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const acc = pos.coords.accuracy;
+
+                // Update posisi awal secara langsung
+                gpsData = [lat, lon];
+                lastGPSUpdate = Date.now(); // update waktu terakhir GPS
+                forceUpdateDistanceUI(lat, lon, acc);
+            },
+            err => {
+                // Handle error jika gagal mendapatkan posisi
+                updateGPSDisplay("⚠️ Gagal mendapatkan lokasi...");
+            },
+            WATCH_OPTIONS
+        );
+
+        // Lanjutkan dengan watchPosition
+        gpsWatcherId = navigator.geolocation.watchPosition(
+            pos => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const acc = pos.coords.accuracy;
+
+                lastGPSUpdate = Date.now(); // update waktu terakhir GPS
+
+                stopGPSLoading();
+
+                // 🔥 FIRST FIX (INI KUNCI)
+                if (!firstFix) {
+                    firstFix = true;
+                    if (typeof onReady === "function") {
+                        onReady(); // tombol aktif lagi di sini
+                    }
+                }
+
+                // Cek akurasi, jika perlu animasi
+                if (acc > MAX_ACCURACY) {
+                    gpsData = [lat, lon];
+                    startAccAnim(lat, lon, acc);
+                } else {
+                    stopAccAnim();
+                    gpsData = [lat, lon];
+                    forceUpdateDistanceUI(lat, lon, acc);
+                }
+
+                if (gpsErrorActive) {
+                    forceClosePopup();
+                    gpsErrorActive = false;
+                }
+            },
+            err => {
+                stopAccAnim();
+                gpsData = [0, 0];
+                lastGPSUpdate = 0; // reset waktu update
+                stopGPSLoading();
+                updateGPSDisplay("⚠️ Sinyal GPS hilang, silakan pindah posisi dan tekan restart gps.");
+
+                if (typeof onReady === "function") onReady(); // 🔥 fallback
+            },
+            WATCH_OPTIONS
+        );
+    }
+
+    // Fungsi untuk cek cache GPS dan tampilkan loading jika kedaluwarsa
+    function checkGPSValidity() {
+        const cacheTimeout = 30000; // 30 detik
+        if (lastGPSUpdate === 0 || (Date.now() - lastGPSUpdate > cacheTimeout)) {
+            // Data GPS sudah kadaluarsa atau belum pernah diperbarui
+            gpsData = null; // atau set ke null
+            showLoading(); // tampilkan indikator loading
+            updateGPSDisplay("Memperbarui lokasi...");
+        } else {
+            // Data GPS masih valid
+            if (gpsData) {
+                forceUpdateDistanceUI(gpsData[0], gpsData[1], null); // Anda bisa sesuaikan konfigurasi
+            }
+        }
     }
 
     setTimeout(() => handleGPS(), 400);
@@ -1224,6 +1235,7 @@ function startGPSMonitoring(onReady) {
             if (!gpsSystemActive) return;
             handleGPS();
             refreshTargetLocation(null, true);
+            checkGPSValidity(); // panggil cek validitas GPS
         }, 3000);
     }
 }
