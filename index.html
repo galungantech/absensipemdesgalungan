@@ -1072,7 +1072,7 @@ function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
 
-    let firstFix = false; // 🔥 PENANDA GPS SIAP
+    //let firstFix = false; // 🔥 PENANDA GPS SIAP
 
 	gpsData = [0, 0];
 	gpsAccuracy = null;
@@ -1138,8 +1138,8 @@ function startGPSMonitoring(onReady) {
                 const acc = pos.coords.accuracy;
 
                 // 🔥 FIRST FIX (INI KUNCI)
-                if (!firstFix) {
-                    firstFix = true;
+                //if (!firstFix) {
+                    //firstFix = true;
 
                     if (typeof onReady === "function") {
                         onReady(); // tombol aktif lagi di sini
