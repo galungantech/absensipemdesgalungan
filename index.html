@@ -1141,21 +1141,21 @@ function startGPSMonitoring(onReady) {
 		    const lon = pos.coords.longitude;
 		    const acc = pos.coords.accuracy;
 		
-		    gpsData = [lat, lon];
-		
 		    if (!firstFix) {
 		        firstFix = true;
-		        stopGPSLoading();
+
 		        if (typeof onReady === "function") onReady();
 		    }
 		
             if (acc > MAX_ACCURACY) {
                 gpsData = [lat, lon];
                 startAccAnim(lat, lon, acc);
+				stopGPSLoading();
             } else {
                 stopAccAnim();
                 gpsData = [lat, lon];
                 forceUpdateDistanceUI(lat, lon, acc);
+				stopGPSLoading();
             }
 
             if (gpsErrorActive) {
