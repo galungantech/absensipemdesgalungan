@@ -705,7 +705,7 @@ async function loginUser() {
 
             setTimeout(() => {
                 startIdleTimer();
-                startGPS();
+                //startGPS();
                 startWebcam();
             }, 500);
             
@@ -1299,6 +1299,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 		});
 	}
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Panggil startGPS otomatis saat halaman selesai dimuat
+    startGPS(() => {
+        console.log("GPS aktif dan siap");
+        // Tambahan lain jika perlu
+    });
 });
 	
 /* =========================================================================================================
