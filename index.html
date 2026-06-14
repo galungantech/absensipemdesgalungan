@@ -1071,6 +1071,8 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
 function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
+
+	let firstFix = false; // 🔥 PENANDA GPS SIAP
 	
 	gpsData = [0, 0];
 	gpsAccuracy = null;
@@ -1155,30 +1157,38 @@ function startWatch() {
             const lon = pos.coords.longitude;
             const acc = pos.coords.accuracy;
 
-			gpsData = [lat, lon];
+                // 🔥 FIRST FIX (INI KUNCI)
+                if (!firstFix) {
+                    firstFix = true;
+					stopGPSLoading();
 
-			stopGPSLoading();
+                    if (typeof onReady === "function") {
+                        onReady(); // tombol aktif lagi di sini
+                    }
+                }
 
-            if (acc > MAX_ACCURACY) {
-                startAccAnim(lat, lon, acc);
-            } else {
+                if (acc > MAX_ACCURACY) {
+                    gpsData = [lat, lon];
+                    startAccAnim(lat, lon, acc);
+                } else {
+                    stopAccAnim();
+                    gpsData = [lat, lon];
+                    forceUpdateDistanceUI(lat, lon, acc);
+                }
+
+                if (gpsErrorActive) {
+                    forceClosePopup();
+                    gpsErrorActive = false;
+                }
+            },
+            err => {
                 stopAccAnim();
-                gpsData = [lat, lon];
-                forceUpdateDistanceUI(lat, lon, acc);
-            }
+                gpsData = [0, 0];
+                stopGPSLoading();
+                updateGPSDisplay("⚠️ Sinyal GPS hilang.");
 
-            if (gpsErrorActive) {
-                forceClosePopup();
-                gpsErrorActive = false;
-            }
-        },
-        err => {
-            stopAccAnim();
-            gpsData = [0, 0];
-            stopGPSLoading();
-            gpsErrorActive = true;
-            updateGPSDisplay("⚠️ GPS tidak aktif atau sinyal hilang.");
-        },
+                if (typeof onReady === "function") onReady(); // 🔥 fallback
+            },
         WATCH_OPTIONS
     );
 }
