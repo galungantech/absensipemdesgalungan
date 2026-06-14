@@ -832,8 +832,9 @@ function resetGPSState() {
 
     accDots = 0;
     areaErrorActive = false;
-    lastInsideArea = null;
-    gpsData = [0, 0];
+	gpsData = [0, 0];
+	gpsAccuracy = 0;
+	lastInsideArea = null;
     gpsErrorActive = false;
     animatingGPS = false;
     improvingAccuracy = false;
@@ -1078,9 +1079,7 @@ function startGPSMonitoring(onReady) {
     let firstFix = false; 
 
     // 1. Bersihkan sisa data lama agar tidak membawa cache
-    gpsData = [0, 0];
-    lastInsideArea = null;
-    areaErrorActive = false;
+	resetGPSState();
     
     // 2. Paksa status loading murni di awal
     stopAccAnim(); 
