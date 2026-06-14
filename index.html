@@ -1072,8 +1072,6 @@ function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
 	
-	let firstFix = false; // 🔥 PENANDA GPS SIAP
-	
 	gpsData = [0, 0];
 	gpsAccuracy = null;
 	lastInsideArea = null;
@@ -1157,13 +1155,6 @@ function startWatch() {
             const lon = pos.coords.longitude;
             const acc = pos.coords.accuracy;
 
-            // ✅ First Fix: hentikan animasi hanya setelah data valid
-            if (!firstFix) {
-                firstFix = true;
-                stopGPSLoading();
-                console.log("GPS First Fix:", lat, lon, acc);
-            }
-			
 			gpsData = [lat, lon];
 
             if (acc > MAX_ACCURACY) {
