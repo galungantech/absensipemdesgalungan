@@ -1079,7 +1079,9 @@ function startGPSMonitoring(onReady) {
     let firstFix = false; 
 
     // 1. Bersihkan sisa data lama agar tidak membawa cache
-	gpsData = [0, 0];
+    gpsData = [0, 0];        // koordinat lama dihapus
+    lastInsideArea = null;   // hapus status area
+    areaErrorActive = false; // hapus error popup lama
     
     // 2. Paksa status loading murni di awal
     stopAccAnim(); 
@@ -1131,13 +1133,36 @@ function startGPSMonitoring(onReady) {
     function startWatch() {
         if (!gpsSystemActive) return;
         if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
+		gpsWatcherId = null;
+		
+	    function startAccAnim(lat, lon, acc) {
+	        stopAccAnim();
+	        animatingGPS = true;
+	        accAnim = setInterval(() => {
+	            accDots = (accDots + 1) % 4;
+	            // Jika belum mendapat koordinat pertama yang lolos seleksi, 
+	            // buat teks tetap menahan informasi loading agar pengguna tahu sistem sedang memproses tingkat akurasi.
+	            if (!firstFix) {
+	                updateGPSDisplay(`Sedang meningkatkan akurasi GPS${".".repeat(accDots)}\n(Akurasi saat ini: ${acc.toFixed(0)}m)`);
+	            } else {
+	                forceUpdateDistanceUI(lat, lon, acc);
+	            }
+	        }, 500);
+	    }
+	
+	    function stopAccAnim() {
+	        if (accAnim) clearInterval(accAnim);
+	        accAnim = null;
+	        accDots = 0;
+	        animatingGPS = false;
+	    }
 
         gpsWatcherId = navigator.geolocation.watchPosition(
             pos => {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 const acc = pos.coords.accuracy;
-				gpsData = [0, 0];
+
                 // 3. JIKA AKURASI MASIH BURUK: Jangan matikan loading utama dulu!
                 if (acc > MAX_ACCURACY) {
                     gpsData = [lat, lon];
@@ -1171,28 +1196,6 @@ function startGPSMonitoring(onReady) {
             },
 			WATCH_OPTIONS
         );
-    }
-
-    function startAccAnim(lat, lon, acc) {
-        stopAccAnim();
-        animatingGPS = true;
-        accAnim = setInterval(() => {
-            accDots = (accDots + 1) % 4;
-            // Jika belum mendapat koordinat pertama yang lolos seleksi, 
-            // buat teks tetap menahan informasi loading agar pengguna tahu sistem sedang memproses tingkat akurasi.
-            if (!firstFix) {
-                updateGPSDisplay(`Sedang meningkatkan akurasi GPS${".".repeat(accDots)}\n(Akurasi saat ini: ${acc.toFixed(0)}m)`);
-            } else {
-                forceUpdateDistanceUI(lat, lon, acc);
-            }
-        }, 500);
-    }
-
-    function stopAccAnim() {
-        if (accAnim) clearInterval(accAnim);
-        accAnim = null;
-        accDots = 0;
-        animatingGPS = false;
     }
 
     setTimeout(() => handleGPS(), 400);
