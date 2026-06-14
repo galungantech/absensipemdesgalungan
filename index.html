@@ -693,7 +693,7 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
-			      gpsData = null;
+			gpsData = null;
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
@@ -701,7 +701,7 @@ async function loginUser() {
                 lastTargetLocation = targetLocation;
             }
             
-            showPopup("Login berhasil!", "success");
+            showPopup("Login berhasil! Selamat datang " + res.nama, "success", 3000);
 
             setTimeout(() => {
                 startIdleTimer();
@@ -809,6 +809,7 @@ const WATCH_OPTIONS = {
     maximumAge: 0,
     timeout: 20000
 };
+	
 // =====================================================
 // START & STOP GPS
 // =====================================================
@@ -1046,7 +1047,7 @@ async function refreshTargetLocation(callback) {
             if (hidden) hidden.value = koordinatMurni;
 
 			// 🚀 UPDATE LANGSUNG TANPA DELAY
-			if (gpsData[0] !== 0) {
+			if (gpsData !== null && gpsData[0] !== 0) {
 			    forceUpdateDistanceUI(gpsData[0], gpsData[1], gpsAccuracy);
 			}
 
@@ -1509,11 +1510,7 @@ document.getElementById('snap').addEventListener('click', async () => {
   }
 
 
-	if (
-	  (gpsData === null || (gpsData[0] === 0 && gpsData[1] === 0)) || 
-	  animatingGPS || 
-	  improvingAccuracy
-	) {
+	if ((gpsData === null || (gpsData[0] === 0 && gpsData[1] === 0)) || animatingGPS || improvingAccuracy) {
 	  showPopup("⚠️ GPS tidak aktif atau GPS sedang mencari lokasi / meningkatkan akurasi.", "warning");
 	  vibrateAlertShort();
 	  isSnapping = false;
@@ -1909,11 +1906,7 @@ async function submitAbsensiForm() {
         }
     }
 
-	if (
-	  (gpsData === null || (gpsData[0] === 0 && gpsData[1] === 0)) || 
-	  animatingGPS || 
-	  improvingAccuracy
-	) {
+	if ((gpsData === null || (gpsData[0] === 0 && gpsData[1] === 0)) || animatingGPS || improvingAccuracy) {
 	  showPopup("⚠️ GPS tidak aktif atau GPS sedang mencari lokasi / meningkatkan akurasi.", "warning");
 	  vibrateAlertShort();
 	  isSnapping = false;
