@@ -693,10 +693,7 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
-			gpsData = [0, 0];
-			gpsAccuracy = null;
-			lastInsideArea = null;
-			
+
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
                 targetLocation = { lat: parseFloat(parts[0]), lon: parseFloat(parts[1]) };
@@ -833,7 +830,6 @@ function resetGPSState() {
     areaErrorActive = false;
     lastInsideArea = null;
     gpsData = [0, 0];
-	gpsAccuracy = null;
     gpsErrorActive = false;
     animatingGPS = false;
     improvingAccuracy = false;
@@ -1072,11 +1068,10 @@ function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
 
-	let firstFix = false; // 🔥 PENANDA GPS SIAP
-	
-	gpsData = [0, 0];
-	gpsAccuracy = null;
-	lastInsideArea = null;
+    let firstFix = false; // 🔥 PENANDA GPS SIAP
+
+    gpsData = [0, 0];
+    lastInsideArea = null;
     areaErrorActive = false;
     updateGPSDisplay("Sedang memperbarui lokasi");
     startGPSLoading();
@@ -1100,8 +1095,6 @@ function startGPSMonitoring(onReady) {
             // Logika mematikan sistem
             if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
 			gpsData = [0, 0];
-			gpsAccuracy = null;
-			lastInsideArea = null;
             gpsWatcherId = null;
             wasGPSEnabled = false;
             stopGPSLoading();
@@ -1114,8 +1107,6 @@ function startGPSMonitoring(onReady) {
         } else {
             // Logika menyalakan kembali
 			gpsData = [0, 0];
-			gpsAccuracy = null;
-			lastInsideArea = null;
             wasGPSEnabled = true;
             gpsErrorActive = false;
             forceClosePopup();
@@ -1127,15 +1118,9 @@ function startGPSMonitoring(onReady) {
 		}
 	}
 
-   function startWatch() {
+    function startWatch() {
         if (!gpsSystemActive) return;
         if (gpsWatcherId !== null) navigator.geolocation.clearWatch(gpsWatcherId);
-
-    const WATCH_OPTIONS = {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 20000
-    };
 
         gpsWatcherId = navigator.geolocation.watchPosition(
             pos => {
@@ -1176,21 +1161,35 @@ function startGPSMonitoring(onReady) {
 
                 if (typeof onReady === "function") onReady(); // 🔥 fallback
             },
-        WATCH_OPTIONS
-    );
-}
-	
-    // 🔥 Monitoring tambahan
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+        );
+    }
+
+    function startAccAnim(lat, lon, acc) {
+        stopAccAnim();
+        animatingGPS = true;
+        accAnim = setInterval(() => {
+            accDots = (accDots + 1) % 4;
+            forceUpdateDistanceUI(lat, lon, acc);
+        }, 500);
+    }
+
+    function stopAccAnim() {
+        if (accAnim) clearInterval(accAnim);
+        accAnim = null;
+        accDots = 0;
+        animatingGPS = false;
+    }
+
     setTimeout(() => handleGPS(), 400);
     if (!gpsMonitorInterval) {
         gpsMonitorInterval = setInterval(() => {
             if (!gpsSystemActive) return; // cek setiap 5 detik
             handleGPS();
             refreshTargetLocation(null, true);
-        }, 5000);
+        }, 3000);
     }
 }
-
 
 // ====== EVENT LISTENER STATUS ======
 let isLoading = false; // Gembok global
