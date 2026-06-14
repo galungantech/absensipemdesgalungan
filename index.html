@@ -1136,27 +1136,35 @@ gpsWatcherId = navigator.geolocation.watchPosition(
     pos => {
         lastGPSUpdate = Date.now(); // 👈 penting
 
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const acc = pos.coords.accuracy;
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const acc = pos.coords.accuracy;
 
-        stopGPSLoading();
+                stopGPSLoading();
 
-        if (!firstFix) {
-            firstFix = true;
-            if (typeof onReady === "function") onReady();
-        }
+                // 🔥 FIRST FIX (INI KUNCI)
+                if (!firstFix) {
+                    firstFix = true;
 
-        gpsData = [lat, lon];
+                    if (typeof onReady === "function") {
+                        onReady(); // tombol aktif lagi di sini
+                    }
+                }
 
-        forceUpdateDistanceUI(lat, lon, acc);
+                if (acc > MAX_ACCURACY) {
+                    gpsData = [lat, lon];
+                    startAccAnim(lat, lon, acc);
+                } else {
+                    stopAccAnim();
+                    gpsData = [lat, lon];
+                    forceUpdateDistanceUI(lat, lon, acc);
+                }
 
-	
-	            if (gpsErrorActive) {
-	                forceClosePopup();
-	                gpsErrorActive = false;
-	            }
-	        },
+                if (gpsErrorActive) {
+                    forceClosePopup();
+                    gpsErrorActive = false;
+                }
+            },
 	        err => {
 	            stopAccAnim();
 	            gpsData = [0, 0];
