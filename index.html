@@ -798,6 +798,7 @@ let lastTargetLocation = null;
 let areaErrorActive = false;
 let lastInsideArea = null;
 let fetchRequestId = 0;
+let gpsAccuracy = 0;
 
 let targetLocation = null;
 let gpsSystemActive = false;
@@ -1164,6 +1165,7 @@ function startGPSMonitoring(onReady) {
 	
 	            // Update posisi awal secara langsung
 	            gpsData = [lat, lon];
+				gpsAccuracy = acc;
 	            forceUpdateDistanceUI(lat, lon, acc);
 	        },
 	        err => {
