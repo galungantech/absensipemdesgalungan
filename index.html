@@ -790,7 +790,11 @@ let gpsSystemActive = false;
 	
 const RADIUS_LIMIT = 30; // meter
 const MAX_ACCURACY = 50; // meter
-
+const WATCH_OPTIONS = {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 20000
+};
 // =====================================================
 // START & STOP GPS
 // =====================================================
@@ -1140,12 +1144,12 @@ function startGPSMonitoring(onReady) {
                     gpsData = [lat, lon];
                     startAccAnim(lat, lon, acc);
                 } else {
-                 
+                 	stopAccAnim();
                     gpsData = [lat, lon];
                     forceUpdateDistanceUI(lat, lon, acc);
 
                     // 🔥 FIRST FIX BERHASIL (Benar-benar Akurat & Baru)
-						if (!firstFix && acc > 0) {
+						if (!firstFix) {
 						    firstFix = true;
 						    stopGPSLoading();
 						
@@ -1166,9 +1170,7 @@ function startGPSMonitoring(onReady) {
 
                 if (typeof onReady === "function") onReady(); 
             },
-            // 5. maximumAge: 0 memastikan browser membuang cache posisi lama 
-            // dan memaksa hardware GPS mencari koordinat paling baru (fresh).
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+			WATCH_OPTIONS
         );
     }
 
