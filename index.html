@@ -1158,28 +1158,27 @@ function startGPSMonitoring(onReady) {
 	    }
 
         gpsWatcherId = navigator.geolocation.watchPosition(
-            pos => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                const acc = pos.coords.accuracy;
+pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const acc = pos.coords.accuracy;
 
-                // 3. JIKA AKURASI MASIH BURUK: Jangan matikan loading utama dulu!
-                if (acc > MAX_ACCURACY) {
-                    gpsData = [lat, lon];
-                    startAccAnim(lat, lon, acc);
-                } else {
-                 	stopAccAnim();
-                    gpsData = [lat, lon];
-                    forceUpdateDistanceUI(lat, lon, acc);
+    gpsData = [lat, lon];
 
-                    // 🔥 FIRST FIX BERHASIL (Benar-benar Akurat & Baru)
-						if (!firstFix) {
-						    firstFix = true;
-						    stopGPSLoading();
-						
-						    if (typeof onReady === "function") onReady();
-						}
-                    }
+    if (!firstFix) {
+        firstFix = true;
+        stopGPSLoading();
+        if (typeof onReady === "function") onReady();
+    }
+
+    if (acc > MAX_ACCURACY) {
+        startAccAnim(lat, lon, acc);
+    } else {
+        stopAccAnim();
+    }
+
+    forceUpdateDistanceUI(lat, lon, acc);
+}
 
                 if (gpsErrorActive) {
                     forceClosePopup();
