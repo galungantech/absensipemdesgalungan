@@ -1126,17 +1126,6 @@ function startGPSMonitoring(onReady) {
 	        return;
 	    }
 	
-	    // 2. JIKA SEMUA AMAN (GPS AKTIF & VALID), JALANKAN WATCHER SEPERTI BIASA
-	    if (gpsEnabled && gpsValid && (lastGPSEnabled !== gpsEnabled || gpsWatcherId === null)) {
-	        lastGPSEnabled = gpsEnabled;
-	        gpsData = [0, 0];
-	        wasGPSEnabled = true;
-	        gpsErrorActive = false;
-	        forceClosePopup();
-	        startGPSLoading();
-	        startWatch(); // 🔥 Di sini watchPosition (JavaScript) mengambil alih koordinat segar
-	    }
-	}
 
 	function startWatch() {
 	    if (!gpsSystemActive) return;
@@ -1161,7 +1150,7 @@ gpsWatcherId = navigator.geolocation.watchPosition(
         gpsData = [lat, lon];
 
         forceUpdateDistanceUI(lat, lon, acc);
-    },
+
 	
 	            if (gpsErrorActive) {
 	                forceClosePopup();
