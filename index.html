@@ -1079,7 +1079,7 @@ function startGPSMonitoring(onReady) {
     let firstFix = false; 
 
     // 1. Bersihkan sisa data lama agar tidak membawa cache
-	resetGPSState();
+	gpsData = [0, 0];
     
     // 2. Paksa status loading murni di awal
     stopAccAnim(); 
@@ -1137,7 +1137,7 @@ function startGPSMonitoring(onReady) {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 const acc = pos.coords.accuracy;
-
+				gpsData = [0, 0];
                 // 3. JIKA AKURASI MASIH BURUK: Jangan matikan loading utama dulu!
                 if (acc > MAX_ACCURACY) {
                     gpsData = [lat, lon];
