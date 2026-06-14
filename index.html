@@ -1138,24 +1138,19 @@ function startGPSMonitoring(onReady) {
                 // 3. JIKA AKURASI MASIH BURUK: Jangan matikan loading utama dulu!
                 if (acc > MAX_ACCURACY) {
                     gpsData = [lat, lon];
-                    
-                    // Kita modifikasi dikit: tetap jalankan pencarian akurasi di background,
-                    // tapi teks display utama tidak langsung melompati status pencarian awal jika belum firstFix.
                     startAccAnim(lat, lon, acc);
                 } else {
-                    // 4. JIKA AKURASI SUDAH BAGUS: Matikan seluruh loading & animasi pembantu
-                    stopGPSLoading();
-                    stopAccAnim();
-                    
+                 
                     gpsData = [lat, lon];
                     forceUpdateDistanceUI(lat, lon, acc);
 
                     // 🔥 FIRST FIX BERHASIL (Benar-benar Akurat & Baru)
-                    if (!firstFix) {
-                        firstFix = true;
-                        if (typeof onReady === "function") {
-                            onReady(); 
-                        }
+						if (!firstFix && acc > 0) {
+						    firstFix = true;
+						    stopGPSLoading();
+						
+						    if (typeof onReady === "function") onReady();
+						}
                     }
                 }
 
