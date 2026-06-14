@@ -693,7 +693,7 @@ async function loginUser() {
             $('#perangkatData').val(res.nama + '|' + res.jabatan);
 
             fotoData = null;
-			      gpsData = [0, 0];
+			      gpsData = null;
 
             if (res.koordinat) {
                 const parts = res.koordinat.split(",");
@@ -786,7 +786,6 @@ let gpsMonitorInterval = null;
 let gpsLoadingInterval = null;
 let gpsImproveInterval = null;
 let accuracyCycleTimer = null;
-let gpsData = [0, 0];
 let gpsData = null;
 let gpsErrorActive = false;
 let animatingGPS = false;
@@ -848,7 +847,6 @@ function resetGPSState() {
     accDots = 0;
     areaErrorActive = false;
     lastInsideArea = null;
-    gpsData = [0, 0];
 	gpsData = null;
     gpsErrorActive = false;
     animatingGPS = false;
@@ -1090,7 +1088,7 @@ function startGPSMonitoring(onReady) {
 
     let firstFix = false; // 🔥 PENANDA GPS SIAP
 
-    gpsData = [0, 0];
+    gpsData = null;
     lastInsideArea = null;
     areaErrorActive = false;
     updateGPSDisplay("Sedang memperbarui lokasi");
@@ -1116,7 +1114,7 @@ function startGPSMonitoring(onReady) {
 	            gpsWatcherId = null;
 	        }
 			
-	        gpsData = [0, 0];
+	        gpsData = null;
 	        gpsWatcherId = null;
 	        wasGPSEnabled = false;
 	        stopGPSLoading();
@@ -1134,7 +1132,7 @@ function startGPSMonitoring(onReady) {
 	    // 2. JIKA SEMUA AMAN (GPS AKTIF & VALID), JALANKAN WATCHER SEPERTI BIASA
 	    if (gpsEnabled && gpsValid && (lastGPSEnabled !== gpsEnabled || gpsWatcherId === null)) {
 	        lastGPSEnabled = gpsEnabled;
-	        gpsData = [0, 0];
+	        gpsData = null;
 	        wasGPSEnabled = true;
 	        gpsErrorActive = false;
 	        forceClosePopup();
@@ -1202,7 +1200,7 @@ function startGPSMonitoring(onReady) {
 	        },
 	        err => {
 	            stopAccAnim();
-	            gpsData = [0, 0];
+	            gpsData = null;
 	            stopGPSLoading();
 	            updateGPSDisplay("⚠️ Sinyal GPS hilang, silakan pindah posisi.");
 				setTimeout(() => {
