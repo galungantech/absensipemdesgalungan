@@ -1157,6 +1157,8 @@ function startWatch() {
 
 			gpsData = [lat, lon];
 
+			stopGPSLoading();
+
             if (acc > MAX_ACCURACY) {
                 startAccAnim(lat, lon, acc);
             } else {
