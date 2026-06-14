@@ -1071,7 +1071,9 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
 function startGPSMonitoring(onReady) {
     const gpsDiv = document.getElementById("gps");
     if (!gpsDiv) return;
-
+	
+	//let firstFix = false; // 🔥 PENANDA GPS SIAP
+	
 	gpsData = [0, 0];
 	gpsAccuracy = null;
 	lastInsideArea = null;
@@ -1155,7 +1157,7 @@ function startWatch() {
             const lon = pos.coords.longitude;
             const acc = pos.coords.accuracy;
 
-            stopGPSLoading();
+			gpsData = [lat, lon];
 
             if (acc > MAX_ACCURACY) {
                 startAccAnim(lat, lon, acc);
