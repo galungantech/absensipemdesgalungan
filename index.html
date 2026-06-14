@@ -1140,22 +1140,16 @@ function startWatch() {
         timeout: 20000
     };
 
-    // 🔥 Fresh fix dulu (sekali panggil)
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            console.log("Fresh fix:", pos.coords);
-            // Biarkan animasi tetap jalan, jangan update UI di sini
-        },
-        err => console.warn("Initial fix failed:", err),
-        WATCH_OPTIONS
-    );
-
     // 🔥 Baru pasang watcher (berkelanjutan)
     gpsWatcherId = navigator.geolocation.watchPosition(
         pos => {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
             const acc = pos.coords.accuracy;
+
+			        // 🚀 langsung seed data awal
+		        gpsData = [lat, lon];
+		        gpsAccuracy = acc;
 
                 // 🔥 FIRST FIX (INI KUNCI)
                 if (!firstFix) {
