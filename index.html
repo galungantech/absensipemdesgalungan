@@ -856,6 +856,11 @@ function resetGPSState() {
     targetLocation = null;
     lastTargetLocation = null;
     isFetchingLocation = false;
+	
+	const gpsDisplay = document.getElementById("gps");
+	if (gpsDisplay) {
+	    gpsDisplay.innerText = ""; // Atau bisa diganti dengan pesan default seperti "Lokasi tidak tersedia"
+	}
 }
 
 // =====================================================
@@ -1040,10 +1045,10 @@ async function refreshTargetLocation(callback) {
 
             if (hidden) hidden.value = koordinatMurni;
 
-            // 🚀 UPDATE LANGSUNG TANPA DELAY
-            if (gpsData[0] !== 0) {
-                forceUpdateDistanceUI(gpsData[0], gpsData[1], gpsAccuracy);
-            }
+			// 🚀 UPDATE LANGSUNG TANPA DELAY
+			if (gpsData[0] !== 0) {
+			    forceUpdateDistanceUI(gpsData[0], gpsData[1], gpsAccuracy);
+			}
 
         } else {
             targetLocation = null;
@@ -1504,13 +1509,16 @@ document.getElementById('snap').addEventListener('click', async () => {
   }
 
 
-	//  VALIDASI GPS & RADIUS
-	if ((gpsData[0] === 0 && gpsData[1] === 0) || animatingGPS || improvingAccuracy) {
-		showPopup("⚠️ GPS tidak aktif atau GPS sedang mencari lokasi / meningkatkan akurasi.", "warning");
-    	vibrateAlertShort();
-    	isSnapping = false;
-    	return;
-  	}
+	if (
+	  (gpsData === null || (gpsData[0] === 0 && gpsData[1] === 0)) || 
+	  animatingGPS || 
+	  improvingAccuracy
+	) {
+	  showPopup("⚠️ GPS tidak aktif atau GPS sedang mencari lokasi / meningkatkan akurasi.", "warning");
+	  vibrateAlertShort();
+	  isSnapping = false;
+	  return;
+	}
 
 	// 📏 Validasi Radius & Kesiapan Data
 	const statusLower = status.toLowerCase();
@@ -1901,13 +1909,16 @@ async function submitAbsensiForm() {
         }
     }
 
-	//  VALIDASI GPS & RADIUS
-	if ((gpsData[0] === 0 && gpsData[1] === 0) || animatingGPS || improvingAccuracy) {
-		showPopup("⚠️ GPS tidak aktif atau GPS sedang mencari lokasi / meningkatkan akurasi.", "warning");
-    	vibrateAlertShort();
-    	isSubmitting = false;
-    	return;
-  	}
+	if (
+	  (gpsData === null || (gpsData[0] === 0 && gpsData[1] === 0)) || 
+	  animatingGPS || 
+	  improvingAccuracy
+	) {
+	  showPopup("⚠️ GPS tidak aktif atau GPS sedang mencari lokasi / meningkatkan akurasi.", "warning");
+	  vibrateAlertShort();
+	  isSnapping = false;
+	  return;
+	}
 
 	// 📏 Validasi Radius & Kesiapan Data
 	if (status === "hadir" || status === "wfh") {
@@ -2497,7 +2508,7 @@ function closePengaturanPasswordForm() {
 function logout(fromIdle = false){
     popupActive = false;
 
-    stopGPSMonitoring();
+    //stopGPSMonitoring();
     resetFoto();
     stopWebcam(); // Hentikan Kamera
     
