@@ -1147,14 +1147,14 @@ function startWatch() {
             const lon = pos.coords.longitude;
             const acc = pos.coords.accuracy;
 
-			        // 🚀 langsung seed data awal
+			    // 🚀 langsung seed data awal
 		        gpsData = [lat, lon];
 		        gpsAccuracy = acc;
+				stopGPSLoading();
 
                 // 🔥 FIRST FIX (INI KUNCI)
                 if (!firstFix) {
                     firstFix = true;
-					stopGPSLoading();
 
                     if (typeof onReady === "function") {
                         onReady(); // tombol aktif lagi di sini
