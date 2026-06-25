@@ -765,7 +765,7 @@ async function isGPSValidUniversal() {
            // Memanggil pengecekan sistem anti-mock modern di Kotlin
            return GPSBridge.isGPSValid(); 
        } catch { 
-         //  return true; 
+           return true; 
        }
    }
    // Di browser biasa, deteksi mock otomatis diserahkan ke filter timestamp Anda
