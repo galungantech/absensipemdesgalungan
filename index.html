@@ -1341,74 +1341,65 @@ function stopWebcam() {
 }
 
 async function startWebcam() {
-    if (!useCamera) {
-        $('#cameraContainer').hide();
-        $('#dokumentasi').hide();
-        $('#restartCamera').hide();
-        $('#reset').hide();
-        $('#snap').hide();
-        return;
+	if (!useCamera) {
+        $('#cameraContainer').hide(); // Sembunyikan kontainer kamera
+		$('#dokumentasi').hide(); // Sembunyikan tulisan dokumentasi kamera
+		$('#restartCamera').hide(); // Sembunyikan kontainer kamera
+		$('#reset').hide(); // Sembunyikan kontainer kamera
+		$('#snap').hide(); // Sembunyikan kontainer kamera
+        return; 
     }
 
-    if (isStarting) return;
-    isStarting = true;
+  if (isStarting) return;
+  isStarting = true;
 
-    const video = document.getElementById('video');
-    const preview = document.getElementById('fotoPreview');
-    const container = document.getElementById('cameraContainer');
-    const btn = document.getElementById('restartCamera');
+  const video = document.getElementById('video');
+  const preview = document.getElementById('fotoPreview');
+  const container = document.getElementById('cameraContainer');
+  const btn = document.getElementById('restartCamera');
 
-    if (btn) btn.disabled = true;
+  if (btn) btn.disabled = true;
 
-    try {
-        resetFoto();
-        stopWebcam();
-        preview.style.display = 'none';
-        video.style.display = 'none';
+  try {
+    resetFoto();
+    stopWebcam();
+    preview.style.display = 'none';
+    video.style.display = 'none';
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const hasCamera = devices.some(d => d.kind === 'videoinput');
-        if (!hasCamera) {
-            showPopup("📷 Tidak ada kamera terdeteksi.", "error");
-            return;
-        }
-
-        // 🔥 Langsung gunakan constraints lengkap di sini agar tidak tertimpa
-        const constraints = {
-            video: {
-                facingMode: "user",
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                aspectRatio: { ideal: 1.7777777778 }
-            },
-            audio: false
-        };
-
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        
-        await new Promise((resolve, reject) => {
-            video.onloadedmetadata = () => {
-                video.play().then(resolve).catch(reject);
-            };
-        });
-        
-        video.style.display = 'block';
-        const aspect = video.videoHeight / video.videoWidth;
-        if (aspect && isFinite(aspect)) {
-            container.style.height = `${container.offsetWidth * aspect}px`;
-        }
-
-    } catch (err) {
-        console.error("Kamera Error:", err);
-        showPopup("❌ Gagal akses kamera: " + err.message, "error");
-        stopWebcam();
-    } finally {
-        isStarting = false;
-        if (btn) btn.disabled = false;
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const hasCamera = devices.some(d => d.kind === 'videoinput');
+    if (!hasCamera) {
+      showPopup("📷 Tidak ada kamera terdeteksi.", "error");
+      return;
     }
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user' },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        video.play().then(resolve).catch(reject);
+      };
+    });
+
+    video.style.display = 'block';
+    const aspect = video.videoHeight / video.videoWidth;
+    if (aspect && isFinite(aspect)) {
+      container.style.height = `${container.offsetWidth * aspect}px`;
+    }
+  } catch (err) {
+    console.error("Kamera Error:", err);
+    showPopup("❌ Gagal akses kamera: " + err.message, "error");
+    stopWebcam();
+  } finally {
+    isStarting = false;
+    if (btn) btn.disabled = false;
+  }
 }
 
 // Event Listener Restart Camera dan reset foto
