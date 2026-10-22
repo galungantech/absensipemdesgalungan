@@ -1367,7 +1367,18 @@ async function startWebcam() {
     video.style.display = 'none';
 
     await new Promise(resolve => setTimeout(resolve, 500));
-
+	  
+// 🔥 PERBAIKAN: Minta resolusi rasio 16:9 agar bidang pandang lebih luas (tidak sempit/crop)
+        const constraints = {
+            video: {
+                facingMode: "user", // Ubah ke "environment" jika pakai kamera belakang
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                aspectRatio: { ideal: 1.7777777778 }
+            },
+            audio: false
+        };
+	  
     const devices = await navigator.mediaDevices.enumerateDevices();
     const hasCamera = devices.some(d => d.kind === 'videoinput');
     if (!hasCamera) {
