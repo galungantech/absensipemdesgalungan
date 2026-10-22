@@ -164,7 +164,7 @@ body {
     margin: 0 auto;
     width: 100%;
     height: 100%;
-    object-fit: cover;    /* memastikan media memenuhi container */
+    object-fit: contain;    /* memastikan media memenuhi container */
     transition: opacity 0.25s ease;
 }
 
