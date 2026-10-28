@@ -1615,20 +1615,25 @@ document.getElementById('snap').addEventListener('click', async () => {
 	        ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
 	
 	        // ==========================================
-	        // 🔥 PENYESUAIAN ORIENTASI (LANDSCAPE / PORTRAIT)
+	        // 🔥 PERBAIKAN: DETEKSI ORIENTASI BERDASARKAN LAYAR/CONTAINER
 	        // ==========================================
-	        const isLandscape = canvas.width > canvas.height;
+	        const container = document.getElementById('cameraContainer');
+	        const containerWidth = container ? container.offsetWidth : window.innerWidth;
+	        const containerHeight = container ? container.offsetHeight : window.innerHeight;
+	        
+	        // Cek apakah orientasi layar/container sedang landscape atau portrait
+	        const isLandscape = containerWidth > containerHeight || window.innerWidth > window.innerHeight;
 	
-	        // Skala ukuran otomatis berdasarkan orientasi & resolusi kanvas
+	        // Skala ukuran otomatis berdasarkan lebar canvas agar tetap proporsional
 	        const scale = isLandscape ? (canvas.width / 1280) : (canvas.width / 720); 
-	        const safeScale = Math.max(scale, 0.8); // Batas minimal skala agar tetap terbaca
+	        const safeScale = Math.max(scale, 0.8); 
 	
 	        const marginBottom = Math.round(20 * safeScale);
 	        const startX = Math.round(30 * safeScale);
 	        const paddingRight = Math.round(30 * safeScale);
 	        const paddingBox = Math.round(40 * safeScale);
 	        
-	        // Ukuran font dinamis mengikuti orientasi
+	        // Ukuran font dinamis mengikuti orientasi layar asli
 	        const fStatus = Math.round((isLandscape ? 26 : 24) * safeScale);
 	        const fJam = Math.round((isLandscape ? 25 : 23) * safeScale);
 	        const fTgl = Math.round((isLandscape ? 24 : 22) * safeScale);
