@@ -1564,12 +1564,35 @@ document.getElementById('snap').addEventListener('click', async () => {
   
 	try {
 	    const canvas = document.createElement("canvas");
-	    canvas.width = video.videoWidth;
-	    canvas.height = video.videoHeight;
+	    
+	    // 🔥 CEK APAKAH LAYAR / CONTAINER BERADA DALAM MODE LANDSCAPE
+	    const container = document.getElementById('cameraContainer');
+	    const containerWidth = container ? container.offsetWidth : window.innerWidth;
+	    const containerHeight = container ? container.offsetHeight : window.innerHeight;
+	    const isLandscapeDevice = containerWidth > containerHeight || window.innerWidth > window.innerHeight;
+	
+	    // Jika perangkat di-landscape, balik ukuran canvas agar mengikuti putaran HP
+	    if (isLandscapeDevice && video.videoHeight > video.videoWidth) {
+	        canvas.width = video.videoHeight;
+	        canvas.height = video.videoWidth;
+	    } else {
+	        canvas.width = video.videoWidth;
+	        canvas.height = video.videoHeight;
+	    }
+	
 	    const ctx = canvas.getContext("2d");
 	    
-	    // 1. Ambil gambar murni dari video
-	    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+	    // 🔥 JIKA LANDSCAPE, PUTAR GAMBAR VIDEO AGAR WATERMARK IKUT MENDATAR
+	    if (isLandscapeDevice && video.videoHeight > video.videoWidth) {
+	        ctx.save();
+	        ctx.translate(canvas.width / 2, canvas.height / 2);
+	        ctx.rotate(90 * Math.PI / 180); // Putar 90 derajat
+	        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2, video.videoWidth, video.videoHeight);
+	        ctx.restore();
+	    } else {
+	        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+	    }
+	
 	    const fotoMurni = canvas.toDataURL("image/jpeg", 0.65);
 	
 	    // =====================================================
