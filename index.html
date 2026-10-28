@@ -1595,175 +1595,180 @@ document.getElementById('snap').addEventListener('click', async () => {
 	    const response = await fetch(`${GAS_URL}?action=getServerTime`);
 	    const serverTime = await response.json();
 	
-	    // Persiapan Variabel untuk Watermark
-	    const statusEl = document.getElementById("status");
-		const labelStatus = statusEl && statusEl.value ? statusEl.value.toUpperCase() : "";
-		const ketElement = document.getElementById("keterangan");
-		const keteranganUser = ketElement ? ketElement.value.trim() : "";
-		const finalKeterangan = keteranganUser ? keteranganUser : "-";
-	    const jamTampil = serverTime.waktu + " WITA";
-	    const tanggalServer = serverTime.tanggal;
-	    const hariServer = serverTime.hari;
-	    const gpsText = `${gpsData[0]}, ${gpsData[1]}`;
+// Persiapan Variabel untuk Watermark
+    const statusEl = document.getElementById("status");
+    const labelStatus = statusEl && statusEl.value ? statusEl.value.toUpperCase() : "";
+    const ketElement = document.getElementById("keterangan");
+    const keteranganUser = ketElement ? ketElement.value.trim() : "";
+    const finalKeterangan = keteranganUser ? keteranganUser : "-";
+    const jamTampil = serverTime.waktu + " WITA";
+    const tanggalServer = serverTime.tanggal;
+    const hariServer = serverTime.hari;
+    const gpsText = `${gpsData[0]}, ${gpsData[1]}`;
 
-		gpsSaatFoto = [...gpsData];
-	
-	    const img = new Image();
-	    img.src = fotoMurni;
-        img.onload = function () {
-            const ctx2 = canvas.getContext("2d");
-            ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
-    
-            // ==========================================
-            // LOGIKA WATERMARK (SAMA PERSIS 100%)
-            // ==========================================
-            const marginBottom = 20;
-            const startX = 30;
-            const paddingRight = 30;
-            const paddingBox = 40;
-            const lineHeight = 28;
-    
-            ctx2.textAlign = "left";
-    
-            // Shadow halus
-            ctx2.shadowColor = "rgba(0,0,0,0.6)";
-            ctx2.shadowBlur = 3;
-            ctx2.shadowOffsetX = 1;
-            ctx2.shadowOffsetY = 1;
-    
-            // WRAP FUNCTION
-            function getWrappedLines(ctx, text, maxWidth) {
-                const words = text.split(" ");
-                let lines = [];
-                let line = "";
-                for (let n = 0; n < words.length; n++) {
-                    const testLine = line + words[n] + " ";
-                    if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-                        lines.push(line.trim());
-                        line = words[n] + " ";
-                    } else {
-                        line = testLine;
-                    }
-                }
-                lines.push(line.trim());
-                return lines;
-            }
-    
-            const maxWidthText = canvas.width - startX - paddingRight;
-            ctx2.font = "20px Arial";
-            const ketLines = finalKeterangan ? getWrappedLines(ctx2, finalKeterangan, maxWidthText) : [];
-    
-            // HITUNG JUMLAH BARIS
-            let totalLines = 0;
-            if (labelStatus) totalLines += 1;
-            totalLines += 3; // JAM, TANGGAL, GPS
-            totalLines += ketLines.length;
-    
-            const totalHeight = (totalLines - 0.3) * lineHeight;
-            let currentY = canvas.height - marginBottom;
-    
-            // HITUNG LEBAR TERPANJANG
-            function getMaxTextWidth(ctx, texts) {
-                let max = 0;
-                texts.forEach(t => {
-                    const w = ctx.measureText(t).width;
-                    if (w > max) max = w;
-                });
-                return max;
-            }
-    
-            let allLines = [];
-            if (labelStatus) { ctx2.font = "bold 24px Arial"; allLines.push(labelStatus); }
-            ctx2.font = "bold 23px Arial"; allLines.push(jamTampil);
-            ctx2.font = "22px Arial"; allLines.push(`${tanggalServer} | ${hariServer}`);
-            ctx2.font = "20px Arial"; allLines.push(gpsText);
-            if (ketLines.length > 0) allLines = allLines.concat(ketLines);
-    
-            const maxTextWidth = getMaxTextWidth(ctx2, allLines);
-            const dynamicWidth = maxTextWidth + paddingBox;
-            const finalBoxWidth = Math.min(dynamicWidth, canvas.width);
-    
-            // BACKGROUND DINAMIS
-            const padding = 10;
-            const boxTop = currentY - totalHeight - padding;
-            const boxBottom = currentY + padding;
-            const boxHeight = totalHeight + padding * 2;
-    
-            const gradient = ctx2.createLinearGradient(0, 0, finalBoxWidth, 0);
-            gradient.addColorStop(0, "rgba(0,0,0,0.35)");
-            gradient.addColorStop(1, "rgba(0,0,0,0)");
-    
-            ctx2.fillStyle = gradient;
-            ctx2.fillRect(0, boxTop, finalBoxWidth, boxHeight);
-    
-            // GARIS KUNING FIX
-            ctx2.shadowColor = "transparent";
-            ctx2.strokeStyle = "#FFC107";
-            ctx2.lineWidth = 4;
-            ctx2.lineCap = "round";
-            const halfStroke = ctx2.lineWidth / 2;
-    
-            ctx2.beginPath();
-            ctx2.moveTo(startX - 12, boxTop + halfStroke);
-            ctx2.lineTo(startX - 12, boxBottom - halfStroke);
-            ctx2.stroke();
-    
-            // GAMBAR TEKS DARI BAWAH NAIK
-            if (ketLines.length > 0) {
-                ctx2.font = "20px Arial"; ctx2.fillStyle = "#FFFFFF";
-                for (let i = ketLines.length - 1; i >= 0; i--) {
-                    ctx2.fillText(ketLines[i], startX, currentY);
-                    currentY -= lineHeight;
+    gpsSaatFoto = [...gpsData];
+
+    const img = new Image();
+    img.src = fotoMurni;
+    img.onload = function () {
+        const ctx2 = canvas.getContext("2d");
+        ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // ==========================================
+        // 🔥 PENYESUAIAN ORIENTASI (LANDSCAPE / PORTRAIT)
+        // ==========================================
+        const isLandscape = canvas.width > canvas.height;
+
+        // Skala ukuran otomatis berdasarkan orientasi & resolusi kanvas
+        const scale = isLandscape ? (canvas.width / 1280) : (canvas.width / 720); 
+        const safeScale = Math.max(scale, 0.8); // Batas minimal skala agar tetap terbaca
+
+        const marginBottom = Math.round(20 * safeScale);
+        const startX = Math.round(30 * safeScale);
+        const paddingRight = Math.round(30 * safeScale);
+        const paddingBox = Math.round(40 * safeScale);
+        
+        // Ukuran font dinamis mengikuti orientasi
+        const fStatus = Math.round((isLandscape ? 26 : 24) * safeScale);
+        const fJam = Math.round((isLandscape ? 25 : 23) * safeScale);
+        const fTgl = Math.round((isLandscape ? 24 : 22) * safeScale);
+        const fGps = Math.round((isLandscape ? 22 : 20) * safeScale);
+        const fKet = Math.round((isLandscape ? 22 : 20) * safeScale);
+        const lineHeight = Math.round((fStatus + 6) * safeScale);
+
+        ctx2.textAlign = "left";
+
+        // Shadow halus
+        ctx2.shadowColor = "rgba(0,0,0,0.6)";
+        ctx2.shadowBlur = Math.round(3 * safeScale);
+        ctx2.shadowOffsetX = 1;
+        ctx2.shadowOffsetY = 1;
+
+        // WRAP FUNCTION
+        function getWrappedLines(ctx, text, maxWidth) {
+            const words = text.split(" ");
+            let lines = [];
+            let line = "";
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + " ";
+                if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                    lines.push(line.trim());
+                    line = words[n] + " ";
+                } else {
+                    line = testLine;
                 }
             }
-    
-            ctx2.font = "20px Arial"; ctx2.fillStyle = "#F8F9FA";
-            ctx2.fillText(gpsText, startX, currentY);
-            currentY -= lineHeight;
-    
-            ctx2.font = "22px Arial"; ctx2.fillStyle = "#FFFFFF";
-            ctx2.fillText(`${tanggalServer} | ${hariServer}`, startX, currentY);
-            currentY -= lineHeight;
-    
-            ctx2.font = "bold 23px Arial";
-            ctx2.fillText(jamTampil, startX, currentY);
-            currentY -= lineHeight;
-    
-            if (labelStatus) {
-                ctx2.font = "bold 24px Arial"; ctx2.fillStyle = "#FFC107";
-                ctx2.fillText(labelStatus, startX, currentY);
+            lines.push(line.trim());
+            return lines;
+        }
+
+        const maxWidthText = canvas.width - startX - paddingRight;
+        ctx2.font = `${fKet}px Arial`;
+        const ketLines = finalKeterangan ? getWrappedLines(ctx2, finalKeterangan, maxWidthText) : [];
+
+        // HITUNG JUMLAH BARIS
+        let totalLines = 0;
+        if (labelStatus) totalLines += 1;
+        totalLines += 3; // JAM, TANGGAL, GPS
+        totalLines += ketLines.length;
+
+        const totalHeight = (totalLines - 0.3) * lineHeight;
+        let currentY = canvas.height - marginBottom;
+
+        // HITUNG LEBAR TERPANJANG
+        function getMaxTextWidth(ctx, texts) {
+            let max = 0;
+            texts.forEach(t => {
+                const w = ctx.measureText(t).width;
+                if (w > max) max = w;
+            });
+            return max;
+        }
+
+        let allLines = [];
+        if (labelStatus) { ctx2.font = `bold ${fStatus}px Arial`; allLines.push(labelStatus); }
+        ctx2.font = `bold ${fJam}px Arial`; allLines.push(jamTampil);
+        ctx2.font = `${fTgl}px Arial`; allLines.push(`${tanggalServer} | ${hariServer}`);
+        ctx2.font = `${fGps}px Arial`; allLines.push(gpsText);
+        if (ketLines.length > 0) allLines = allLines.concat(ketLines);
+
+        const maxTextWidth = getMaxTextWidth(ctx2, allLines);
+        const dynamicWidth = maxTextWidth + paddingBox;
+        const finalBoxWidth = Math.min(dynamicWidth, canvas.width);
+
+        // BACKGROUND DINAMIS
+        const padding = Math.round(10 * safeScale);
+        const boxTop = currentY - totalHeight - padding;
+        const boxBottom = currentY + padding;
+        const boxHeight = totalHeight + padding * 2;
+
+        const gradient = ctx2.createLinearGradient(0, 0, finalBoxWidth, 0);
+        gradient.addColorStop(0, "rgba(0,0,0,0.35)");
+        gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+        ctx2.fillStyle = gradient;
+        ctx2.fillRect(0, boxTop, finalBoxWidth, boxHeight);
+
+        // GARIS KUNING FIX
+        ctx2.shadowColor = "transparent";
+        ctx2.strokeStyle = "#FFC107";
+        ctx2.lineWidth = Math.max(3, Math.round(4 * safeScale));
+        ctx2.lineCap = "round";
+        const halfStroke = ctx2.lineWidth / 2;
+
+        ctx2.beginPath();
+        ctx2.moveTo(startX - Math.round(12 * safeScale), boxTop + halfStroke);
+        ctx2.lineTo(startX - Math.round(12 * safeScale), boxBottom - halfStroke);
+        ctx2.stroke();
+
+        // GAMBAR TEKS DARI BAWAH NAIK
+        if (ketLines.length > 0) {
+            ctx2.font = `${fKet}px Arial`; ctx2.fillStyle = "#FFFFFF";
+            for (let i = ketLines.length - 1; i >= 0; i--) {
+                ctx2.fillText(ketLines[i], startX, currentY);
+                currentY -= lineHeight;
             }
-    
-            // Reset shadow
-            ctx2.shadowColor = "transparent";
-            ctx2.shadowBlur = 0;
-    
-            // FINALISASI FOTO
-            const finalFoto = canvas.toDataURL("image/jpeg", 0.65);
-            fotoData = {
-                name: `${userData?.nama || "user"}_${serverTime.full.replace(/[: ]/g, "_")}.jpeg`,
-                base64: finalFoto.split(",")[1],
-				type: "image/jpeg",
-                gps: gpsSaatFoto,
-                waktu: serverTime.iso
-            };
-    
-            const fotoPreview = document.getElementById("fotoPreview");
-            fotoPreview.src = finalFoto;
-            fotoPreview.style.display = "block";
-            video.style.display = "none";
-    
-            showPopup("Foto berhasil diambil ✅", "success", 1000);
-            isSnapping = false;
+        }
+
+        ctx2.font = `${fGps}px Arial`; ctx2.fillStyle = "#F8F9FA";
+        ctx2.fillText(gpsText, startX, currentY);
+        currentY -= lineHeight;
+
+        ctx2.font = `${fTgl}px Arial`; ctx2.fillStyle = "#FFFFFF";
+        ctx2.fillText(`${tanggalServer} | ${hariServer}`, startX, currentY);
+        currentY -= lineHeight;
+
+        ctx2.font = `bold ${fJam}px Arial`;
+        ctx2.fillText(jamTampil, startX, currentY);
+        currentY -= lineHeight;
+
+        if (labelStatus) {
+            ctx2.font = `bold ${fStatus}px Arial`; ctx2.fillStyle = "#FFC107";
+            ctx2.fillText(labelStatus, startX, currentY);
+        }
+
+        // Reset shadow
+        ctx2.shadowColor = "transparent";
+        ctx2.shadowBlur = 0;
+
+        // FINALISASI FOTO
+        const finalFoto = canvas.toDataURL("image/jpeg", 0.65);
+        fotoData = {
+            name: `${userData?.nama || "user"}_${serverTime.full.replace(/[: ]/g, "_")}.jpeg`,
+            base64: finalFoto.split(",")[1],
+            type: "image/jpeg",
+            gps: gpsSaatFoto,
+            waktu: serverTime.iso
         };
-        img.src = fotoMurni;
-    
-    } catch (err) {
-        console.error(err);
-        showPopup("❌ Gagal memproses foto/waktu!", "error");
+
+        const fotoPreview = document.getElementById("fotoPreview");
+        fotoPreview.src = finalFoto;
+        fotoPreview.style.display = "block";
+        video.style.display = "none";
+
+        showPopup("Foto berhasil diambil ✅", "success", 1000);
         isSnapping = false;
-    }
-});
+    };
 
 /* =========================================================================================================
 Fungsi untuk menyembunyikan, lokasi dan kamera
